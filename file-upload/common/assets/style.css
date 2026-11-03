@@ -1,0 +1,103 @@
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --line: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --accent: #3fb950;
+  --danger: #f85149;
+  --mono: ui-monospace, "JetBrains Mono", "Fira Code", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+a { color: var(--accent); }
+
+code { font-family: var(--mono); color: var(--accent); }
+
+.lab-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.brand { font-weight: 700; margin-right: auto; }
+.dim { color: var(--muted); font-weight: 400; }
+
+.tag {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+}
+
+.tag.level { color: var(--accent); border-color: var(--accent); }
+
+.wrap { max-width: 640px; margin: 48px auto; padding: 0 16px; }
+
+.app {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 28px;
+}
+
+h1 { margin: 0 0 4px; font-size: 24px; }
+h2 { font-size: 17px; margin: 24px 0 8px; }
+
+.tagline { margin: 0 0 24px; color: var(--muted); }
+
+.upload { display: grid; gap: 10px; }
+
+label { font-size: 13px; color: var(--muted); }
+
+input[type="file"], input[type="text"], select {
+  width: 100%;
+  padding: 10px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+button {
+  justify-self: start;
+  padding: 9px 18px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #04130a;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.alert {
+  margin: 0 0 18px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.alert.ok { border-color: var(--accent); background: rgba(63, 185, 80, .08); }
+.alert.err { border-color: var(--danger); background: rgba(248, 81, 73, .08); }
+
+.goal { color: var(--muted); font-size: 13px; text-align: center; margin-top: 18px; }
+
+.gallery { display: flex; flex-wrap: wrap; gap: 10px; padding: 0; list-style: none; }
+.gallery img { width: 120px; height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); }
+
+nav.menu { display: flex; gap: 16px; margin-bottom: 20px; font-size: 14px; }

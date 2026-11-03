@@ -1,0 +1,6 @@
+# Soluciones y solvers: privados, nunca al repo público
+solutions/
+
+*.log
+.DS_Store
+Thumbs.db

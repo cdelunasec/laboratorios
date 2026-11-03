@@ -1,0 +1,11 @@
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: common/Dockerfile.apache
+      args:
+        LEVEL: "10"
+    image: cdelunasec-labs/file-upload:10
+    container_name: file-upload-10
+    ports:
+      - "127.0.0.1:8010:80"

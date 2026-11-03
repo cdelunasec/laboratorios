@@ -1,0 +1,29 @@
+FROM php:8.2-apache
+
+# Extensiones que usan algunos niveles (GD para imágenes, zip para archivos comprimidos).
+# Va primero para que Docker reutilice esta capa entre todos los niveles.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpng-dev libjpeg62-turbo-dev libzip-dev \
+    && docker-php-ext-configure gd --with-jpeg \
+    && docker-php-ext-install gd zip \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG LEVEL
+ENV LAB_ID=file-upload-${LEVEL}
+
+COPY common/entrypoint.sh /usr/local/bin/lab-entrypoint
+COPY common/lab.php /var/www/lab/lab.php
+COPY common/assets/ /var/www/html/assets/
+COPY level${LEVEL}/apache.conf /etc/apache2/conf-available/docker-php.conf
+COPY level${LEVEL}/src/ /var/www/html/
+COPY level${LEVEL}/setup.sh /tmp/setup.sh
+
+RUN sed -i 's/\r$//' /usr/local/bin/lab-entrypoint /tmp/setup.sh \
+    && chmod +x /usr/local/bin/lab-entrypoint \
+    && chown -R root:root /var/www/html \
+    && chmod 755 /var/www/html \
+    && sh /tmp/setup.sh \
+    && rm /tmp/setup.sh
+
+ENTRYPOINT ["lab-entrypoint"]
+CMD ["apache2-foreground"]

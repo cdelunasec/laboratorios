@@ -1,0 +1,11 @@
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: common/Dockerfile.nginx
+      args:
+        LEVEL: "18"
+    image: cdelunasec-labs/file-upload:18
+    container_name: file-upload-18
+    ports:
+      - "127.0.0.1:8018:80"
