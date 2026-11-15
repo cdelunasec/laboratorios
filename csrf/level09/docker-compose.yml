@@ -1,0 +1,25 @@
+# Lab local de CSRF, nivel 09. Solo escucha en 127.0.0.1 (entorno controlado).
+# Se une a la red labs-bot para que el bot (el admin) lo vea como csrf-09.labs.test.
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: common/Dockerfile.apache
+      args:
+        LEVEL: "09"
+    image: cdelunasec-labs/csrf:09
+    container_name: csrf-09
+    ports:
+      - "127.0.0.1:8609:80"
+    networks:
+      default: {}
+      labs:
+        aliases:
+          - csrf-09.labs.test
+    volumes:
+      - ../../.flags/csrf:/lab-hashes
+
+networks:
+  labs:
+    external: true
+    name: labs-bot

@@ -117,4 +117,23 @@ return [
             15 => ['jefe final', 'lectura'],
         ],
     ],
+    'csrf' => [
+        'nombre' => 'CSRF',
+        'alias' => 'csrf',
+        'puerto' => '86',
+        'niveles' => [
+            1 => ['sin protección', 'lectura'],
+            2 => ['basta con un enlace', 'lectura'],
+            3 => ['si no viene, no se revisa', 'lectura'],
+            4 => ['un token es un token', 'lectura'],
+            5 => ['galleta contra galleta', 'lectura'],
+            6 => ['cambia el verbo', 'lectura'],
+            7 => ['el Referer delata', 'lectura'],
+            8 => ['sin referencia', 'lectura'],
+            9 => ['no es un formulario... ¿o sí?', 'lectura'],
+            10 => ['mismo sitio, otro origen', 'lectura'],
+            11 => ['pregunta y te lo dicen', 'lectura'],
+            12 => ['jefe final', 'lectura'],
+        ],
+    ],
 ];

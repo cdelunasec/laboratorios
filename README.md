@@ -39,10 +39,10 @@ Eso levanta el nivel 1 de file-upload en `http://127.0.0.1:8001`. El puerto es `
 | `./lab.sh stop-all` | Apaga todo |
 | `./lab.sh list` | Categorías y cuántos niveles tiene cada una |
 
-| `./lab.sh bot` | Levanta el bot víctima y el servidor de exploits en `http://127.0.0.1:8290` (los niveles de xss lo levantan solos) |
+| `./lab.sh bot` | Levanta el bot víctima y el servidor de exploits en `http://127.0.0.1:8290` (los niveles de xss y csrf lo levantan solos) |
 | `./lab.sh panel` | Levanta el panel de flags en `http://127.0.0.1:8200` (`./lab.sh panel down` lo apaga) |
 
-Categorías disponibles: `upload` (alias de `file-upload`), `lfi`, `http` (alias de `http-headers`), `idor`, `ssrf` y `xss`.
+Categorías disponibles: `upload` (alias de `file-upload`), `lfi`, `http` (alias de `http-headers`), `idor`, `ssrf`, `xss` y `csrf`.
 
 ## El objetivo
 
@@ -62,7 +62,7 @@ Cada nivel corre en su propio contenedor aislado: lo que hagas en uno no afecta 
 - [x] **http-headers** — 20 niveles. Cabeceras HTTP: de cambiar el User-Agent a envenenar enlaces por `Host` y lograr RCE desde una cabecera.
 - [x] **xss** — 15 niveles. Cross-Site Scripting con un admin de verdad (un navegador headless) como víctima: reflejado, almacenado, DOM, filtros, CSP y cookies HttpOnly.
 - [x] **ssrf** — 12 niveles. Server-Side Request Forgery: hacer que el servidor pida por ti, de `127.0.0.1` a gopher, XXE y metadatos de la nube.
-- [ ] csrf
+- [x] **csrf** — 12 niveles. Cross-Site Request Forgery contra un admin de verdad (el mismo bot): sin protección, tokens mal validados, Referer, SameSite, JSON y CORS.
 - [x] **idor** — 12 niveles. Insecure Direct Object Reference: leer (y modificar) datos de otros usuarios, de cambiar un número a encadenar filtraciones en una API.
 - [ ] web (cadena completa)
 
@@ -264,12 +264,41 @@ Ojo con las direcciones: el admin ve el nivel como `http://xss-NN.labs.test`, no
 
 > Estado: los 15 niveles construyen y levantan en Docker, el bot entra con la sesión del admin cuando se le avisa y `/admin.php` niega el acceso a cualquier otro. Lo que **no** se ha probado es que cada nivel se resuelva con su técnica. Si uno no se comporta como dice su pista, abre un issue.
 
+## csrf
+
+12 niveles de CSRF. Puerto `86` + el nivel con dos dígitos (nivel 1 → `8601`, nivel 12 → `8612`).
+
+```bash
+./lab.sh up csrf 1
+```
+
+Tú entras como `carlos` / `carlos123`. El admin es el mismo bot de xss: tiene su sesión iniciada y abre lo que le mandes desde **Enviar enlace al admin**. Solo el admin puede cambiar roles; la portada de cada nivel te enseña el formulario (o la API) que usa para hacerlo y qué protección tiene. Tu objetivo es armar una página en el servidor de exploits que haga que el admin, sin saberlo, le dé a carlos el rol `admin`. Después entras como carlos a `/panel.php` y ahí está el flag.
+
+El servidor de exploits (`http://127.0.0.1:8290`) está en `exploit.labs.test` y los niveles en `csrf-NN.labs.test`: distinto origen, pero el mismo sitio (`labs.test`). Eso importa en algunos niveles.
+
+| Nivel | Pista | Puerto |
+|---|---|---|
+| 1 | sin protección | `8601` |
+| 2 | basta con un enlace | `8602` |
+| 3 | si no viene, no se revisa | `8603` |
+| 4 | un token es un token | `8604` |
+| 5 | galleta contra galleta | `8605` |
+| 6 | cambia el verbo | `8606` |
+| 7 | el Referer delata | `8607` |
+| 8 | sin referencia | `8608` |
+| 9 | no es un formulario... ¿o sí? | `8609` |
+| 10 | mismo sitio, otro origen | `8610` |
+| 11 | pregunta y te lo dicen | `8611` |
+| 12 | jefe final | `8612` |
+
+> Estado: los 12 niveles construyen y levantan en Docker, el bot entra con la sesión del admin, y el camino legítimo (el admin cambiando un rol con su sesión y, donde aplica, su token) funciona y hace que carlos vea el flag en el panel. Lo que **no** se ha probado es que cada nivel se resuelva con su técnica de CSRF. Si uno no se comporta como dice su pista, abre un issue.
+
 ## Panel de flags
 
 ```bash
 ./lab.sh panel
 ```
 
-Abre `http://127.0.0.1:8200`, pega un flag y el panel te dice si es el del nivel. Valida **lfi**, **http-headers**, **idor**, **ssrf** y **xss**. Nunca conoce los flags: cada nivel, al arrancar, deja el SHA-256 de su flag en `.flags/<categoría>/<NN>` y el panel compara contra eso. Si reinicias un nivel el flag cambia, así que un flag viejo deja de valer.
+Abre `http://127.0.0.1:8200`, pega un flag y el panel te dice si es el del nivel. Valida **lfi**, **http-headers**, **idor**, **ssrf**, **xss** y **csrf**. Nunca conoce los flags: cada nivel, al arrancar, deja el SHA-256 de su flag en `.flags/<categoría>/<NN>` y el panel compara contra eso. Si reinicias un nivel el flag cambia, así que un flag viejo deja de valer.
 
 El progreso (qué resolviste y cuándo) se guarda en `.flags/panel/progreso.json`. Cada categoría tiene un botón para reiniciar su progreso.

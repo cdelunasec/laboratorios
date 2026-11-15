@@ -17,6 +17,7 @@ declare -A CATEGORIES=(
     [idor]="idor"
     [ssrf]="ssrf"
     [xss]="xss"
+    [csrf]="csrf"
 )
 declare -A PORT_PREFIX=(
     [file-upload]="80"
@@ -25,9 +26,10 @@ declare -A PORT_PREFIX=(
     [idor]="83"
     [ssrf]="84"
     [xss]="85"
+    [csrf]="86"
 )
 # Categorías cuya víctima es el bot compartido (Chromium headless).
-BOT_CATS=" xss "
+BOT_CATS=" xss csrf "
 BOT_NET="labs-bot"
 
 if docker compose version >/dev/null 2>&1; then
@@ -53,9 +55,9 @@ Comandos:
   stop-all          Apaga todos los niveles (el panel y el bot quedan aparte)
   panel [up|down]   Levanta o apaga el panel de flags en http://127.0.0.1:8200
   bot [up|down]     Levanta o apaga el bot víctima y el servidor de exploits
-                    (http://127.0.0.1:8290). Los niveles de xss lo levantan solos.
+                    (http://127.0.0.1:8290). Los niveles de xss y csrf lo levantan solos.
 
-Categorías: upload (file-upload), lfi, http (http-headers), idor, ssrf, xss
+Categorías: upload (file-upload), lfi, http (http-headers), idor, ssrf, xss, csrf
 
 Ejemplo:
   ./lab.sh up upload 1      ->  http://127.0.0.1:8001
