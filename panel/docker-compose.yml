@@ -1,0 +1,12 @@
+# Panel local de flags. Solo escucha en 127.0.0.1.
+services:
+  panel:
+    build:
+      context: ..
+      dockerfile: panel/Dockerfile
+    image: cdelunasec-labs/panel
+    container_name: panel
+    ports:
+      - "127.0.0.1:8200:80"
+    volumes:
+      - ../.flags:/flags

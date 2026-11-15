@@ -39,7 +39,9 @@ Eso levanta el nivel 1 de file-upload en `http://127.0.0.1:8001`. El puerto es `
 | `./lab.sh stop-all` | Apaga todo |
 | `./lab.sh list` | Categorías y cuántos niveles tiene cada una |
 
-Categorías disponibles: `upload` (alias de `file-upload`) y `lfi`.
+| `./lab.sh panel` | Levanta el panel de flags en `http://127.0.0.1:8200` (`./lab.sh panel down` lo apaga) |
+
+Categorías disponibles: `upload` (alias de `file-upload`), `lfi` y `http` (alias de `http-headers`).
 
 ## El objetivo
 
@@ -51,7 +53,7 @@ Cada nivel corre en su propio contenedor aislado: lo que hagas en uno no afecta 
 
 - [x] **file-upload** — 20 niveles. Subir un archivo arbitrario hasta lograr RCE, burlando defensas cada vez más fuertes.
 - [x] **lfi** — 20 niveles. Local File Inclusion, de leer un archivo directo a encadenar LFI con RCE.
-- [ ] http / cabeceras
+- [x] **http-headers** — 20 niveles. Cabeceras HTTP: de cambiar el User-Agent a envenenar enlaces por `Host` y lograr RCE desde una cabecera.
 - [ ] xss
 - [ ] ssrf
 - [ ] csrf
@@ -121,3 +123,52 @@ Los niveles de **lectura** guardan el flag en una ruta conocida (normalmente `/f
 | 20 | jefe final | rce | `8120` |
 
 > Estado: generado pero todavía sin probar en Docker. Si un nivel no levanta o no se comporta como dice su pista, abre un issue.
+
+## http-headers
+
+20 niveles sobre cabeceras HTTP. Puerto `82` + el nivel con dos dígitos (nivel 1 → `8201`, nivel 20 → `8220`).
+
+```bash
+./lab.sh up http 1
+```
+
+En los niveles de **lectura** la propia app te entrega el flag cuando burlas el control (lo verás en la página o en la respuesta de la API). En los de **RCE** el flag está en `/flag_XXXX.txt` con nombre aleatorio, así que tienes que ejecutar comandos para encontrarlo. La pista de cada nivel va en el título de la página.
+
+Algunos niveles responden distinto según el nombre de host que mandes: no hace falta tocar `/etc/hosts`, basta con la cabecera `Host` (`curl -H 'Host: ...'`).
+
+| Nivel | Pista | Tipo | Puerto |
+|---|---|---|---|
+| 1 | dime con qué navegas | lectura | `8201` |
+| 2 | ¿de dónde vienes? | lectura | `8202` |
+| 3 | solo desde la oficina | lectura | `8203` |
+| 4 | el proxy no es el único que habla | lectura | `8204` |
+| 5 | verbos | lectura | `8205` |
+| 6 | el WAF solo deja GET y POST | lectura | `8206` |
+| 7 | un servidor, varios sitios | lectura | `8207` |
+| 8 | la sesión vive en tu navegador | lectura | `8208` |
+| 9 | negociación de contenido | lectura | `8209` |
+| 10 | lee las cabeceras de la respuesta | lectura | `8210` |
+| 11 | Authorization: Bearer | lectura | `8211` |
+| 12 | descarga por partes | lectura | `8212` |
+| 13 | el enlace lo arma tu petición | lectura | `8213` |
+| 14 | la URL original | lectura | `8214` |
+| 15 | límite de intentos | lectura | `8215` |
+| 16 | todo lo anterior | lectura | `8216` |
+| 17 | estadísticas de navegador | rce | `8217` |
+| 18 | a ciegas | rce | `8218` |
+| 19 | galleta serializada | rce | `8219` |
+| 20 | jefe final | rce | `8220` |
+
+> Desde dentro de los contenedores de http-headers, tu máquina se ve como `host.docker.internal`. Te sirve en los niveles donde necesitas que el servidor te contacte a ti (levanta un `nc -lvnp 9000` o un `python3 -m http.server 9000` y apunta ahí).
+
+> Estado: los 20 niveles se probaron en Docker con un solver automático que los resuelve con la técnica prevista y valida el flag contra el hash del nivel (20/20).
+
+## Panel de flags
+
+```bash
+./lab.sh panel
+```
+
+Abre `http://127.0.0.1:8200`, pega un flag y el panel te dice si es el del nivel. Valida **lfi** y **http-headers**. Nunca conoce los flags: cada nivel, al arrancar, deja el SHA-256 de su flag en `.flags/<categoría>/<NN>` y el panel compara contra eso. Si reinicias un nivel el flag cambia, así que un flag viejo deja de valer.
+
+El progreso (qué resolviste y cuándo) se guarda en `.flags/panel/progreso.json`. Cada categoría tiene un botón para reiniciar su progreso.
