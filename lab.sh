@@ -15,12 +15,14 @@ declare -A CATEGORIES=(
     [cabeceras]="http-headers"
     [http-headers]="http-headers"
     [idor]="idor"
+    [ssrf]="ssrf"
 )
 declare -A PORT_PREFIX=(
     [file-upload]="80"
     [lfi]="81"
     [http-headers]="82"
     [idor]="83"
+    [ssrf]="84"
 )
 
 if docker compose version >/dev/null 2>&1; then
@@ -46,7 +48,7 @@ Comandos:
   stop-all          Apaga todos los niveles (el panel queda aparte)
   panel [up|down]   Levanta o apaga el panel de flags en http://127.0.0.1:8200
 
-Categorías: upload (file-upload), lfi, http (http-headers), idor
+Categorías: upload (file-upload), lfi, http (http-headers), idor, ssrf
 
 Ejemplo:
   ./lab.sh up upload 1      ->  http://127.0.0.1:8001
@@ -124,14 +126,14 @@ case "$cmd" in
         done
         ;;
     status)
-        docker ps --filter "label=com.docker.compose.project" --format '{{.Names}}\t{{.Ports}}' | grep -E '^(file-upload|lfi|http-headers|idor|panel)' || echo "No hay niveles corriendo."
+        docker ps --filter "label=com.docker.compose.project" --format '{{.Names}}\t{{.Ports}}' | grep -E '^(file-upload|lfi|http-headers|idor|ssrf|panel)' || echo "No hay niveles corriendo."
         ;;
     stop-all)
-        ids=$(docker ps -q --filter "name=^file-upload-"; docker ps -q --filter "name=^lfi-"; docker ps -q --filter "name=^http-headers-"; docker ps -q --filter "name=^idor-")
+        ids=$(docker ps -q --filter "name=^file-upload-"; docker ps -q --filter "name=^lfi-"; docker ps -q --filter "name=^http-headers-"; docker ps -q --filter "name=^idor-"; docker ps -q --filter "name=^ssrf-")
         [[ -n "$ids" ]] && docker rm -f $ids >/dev/null
         # Borrar también las redes de cada nivel: si se quedan, Docker se
         # queda sin rangos de subred y los niveles nuevos no levantan.
-        nets=$(docker network ls -q --filter "name=^file-upload-"; docker network ls -q --filter "name=^lfi-"; docker network ls -q --filter "name=^http-headers-"; docker network ls -q --filter "name=^idor-")
+        nets=$(docker network ls -q --filter "name=^file-upload-"; docker network ls -q --filter "name=^lfi-"; docker network ls -q --filter "name=^http-headers-"; docker network ls -q --filter "name=^idor-"; docker network ls -q --filter "name=^ssrf-")
         [[ -n "$nets" ]] && docker network rm $nets >/dev/null 2>&1 || true
         echo "[+] Todos los niveles apagados."
         ;;
@@ -139,7 +141,7 @@ case "$cmd" in
         PANEL=("${COMPOSE[@]}" -p panel -f "$ROOT/panel/docker-compose.yml")
         case "${1:-up}" in
             up)
-                mkdir -p "$ROOT/.flags/panel" "$ROOT/.flags/lfi" "$ROOT/.flags/http-headers" "$ROOT/.flags/idor"
+                mkdir -p "$ROOT/.flags/panel" "$ROOT/.flags/lfi" "$ROOT/.flags/http-headers" "$ROOT/.flags/idor" "$ROOT/.flags/ssrf"
                 "${PANEL[@]}" up -d --build
                 echo
                 echo "[+] Panel de flags listo en http://127.0.0.1:8200"

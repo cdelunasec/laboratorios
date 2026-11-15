@@ -1,0 +1,16 @@
+# Lab local de SSRF, nivel 02. Solo escucha en 127.0.0.1 (entorno controlado).
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: common/Dockerfile.apache
+      args:
+        LEVEL: "02"
+    image: cdelunasec-labs/ssrf:02
+    container_name: ssrf-02
+    ports:
+      - "127.0.0.1:8402:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ../../.flags/ssrf:/lab-hashes

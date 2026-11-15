@@ -41,7 +41,7 @@ Eso levanta el nivel 1 de file-upload en `http://127.0.0.1:8001`. El puerto es `
 
 | `./lab.sh panel` | Levanta el panel de flags en `http://127.0.0.1:8200` (`./lab.sh panel down` lo apaga) |
 
-Categorías disponibles: `upload` (alias de `file-upload`), `lfi`, `http` (alias de `http-headers`) e `idor`.
+Categorías disponibles: `upload` (alias de `file-upload`), `lfi`, `http` (alias de `http-headers`), `idor` y `ssrf`.
 
 ## El objetivo
 
@@ -60,7 +60,7 @@ Cada nivel corre en su propio contenedor aislado: lo que hagas en uno no afecta 
 - [x] **lfi** — 20 niveles. Local File Inclusion, de leer un archivo directo a encadenar LFI con RCE.
 - [x] **http-headers** — 20 niveles. Cabeceras HTTP: de cambiar el User-Agent a envenenar enlaces por `Host` y lograr RCE desde una cabecera.
 - [ ] xss
-- [ ] ssrf
+- [x] **ssrf** — 12 niveles. Server-Side Request Forgery: hacer que el servidor pida por ti, de `127.0.0.1` a gopher, XXE y metadatos de la nube.
 - [ ] csrf
 - [x] **idor** — 12 niveles. Insecure Direct Object Reference: leer (y modificar) datos de otros usuarios, de cambiar un número a encadenar filtraciones en una API.
 - [ ] web (cadena completa)
@@ -195,12 +195,41 @@ En todos entras con tu propia cuenta, `carlos` / `carlos123`, y el objetivo es l
 
 > Estado: los 12 niveles se probaron en Docker con un solver automático que los resuelve con la técnica prevista y valida el flag contra el hash del nivel (12/12).
 
+## ssrf
+
+12 niveles de SSRF (Server-Side Request Forgery). Puerto `84` + el nivel con dos dígitos (nivel 1 → `8401`, nivel 12 → `8412`).
+
+```bash
+./lab.sh up ssrf 1
+```
+
+Cada nivel tiene un servicio interno que solo escucha dentro del servidor (en `127.0.0.1`) y es el único que conoce el flag. Desde tu máquina no lo puedes tocar: tienes que conseguir que la app le haga la petición por ti. La página de cada nivel te dice dónde está ese servicio; la excepción es el nivel 3, donde el flag está en `/flag.txt`.
+
+| Nivel | Pista | Puerto |
+|---|---|---|
+| 1 | el servidor pide por ti | `8401` |
+| 2 | localhost tiene muchos nombres | `8402` |
+| 3 | no solo http | `8403` |
+| 4 | ¿qué puerto? | `8404` |
+| 5 | lo que va antes de la arroba | `8405` |
+| 6 | sígueme | `8406` |
+| 7 | solo te dice si funcionó | `8407` |
+| 8 | otro protocolo, otro verbo | `8408` |
+| 9 | la nube sabe quién eres | `8409` |
+| 10 | nombres internos | `8410` |
+| 11 | entidades externas | `8411` |
+| 12 | jefe final | `8412` |
+
+> Igual que en http-headers, desde los contenedores tu máquina se ve como `host.docker.internal` (te hace falta en el nivel 6).
+
+> Estado: los 12 niveles se probaron en Docker con un solver automático que los resuelve con la técnica prevista y valida el flag contra el hash del nivel (12/12).
+
 ## Panel de flags
 
 ```bash
 ./lab.sh panel
 ```
 
-Abre `http://127.0.0.1:8200`, pega un flag y el panel te dice si es el del nivel. Valida **lfi**, **http-headers** e **idor**. Nunca conoce los flags: cada nivel, al arrancar, deja el SHA-256 de su flag en `.flags/<categoría>/<NN>` y el panel compara contra eso. Si reinicias un nivel el flag cambia, así que un flag viejo deja de valer.
+Abre `http://127.0.0.1:8200`, pega un flag y el panel te dice si es el del nivel. Valida **lfi**, **http-headers**, **idor** y **ssrf**. Nunca conoce los flags: cada nivel, al arrancar, deja el SHA-256 de su flag en `.flags/<categoría>/<NN>` y el panel compara contra eso. Si reinicias un nivel el flag cambia, así que un flag viejo deja de valer.
 
 El progreso (qué resolviste y cuándo) se guarda en `.flags/panel/progreso.json`. Cada categoría tiene un botón para reiniciar su progreso.

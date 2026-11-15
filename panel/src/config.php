@@ -76,4 +76,23 @@ return [
             12 => ['jefe final', 'lectura'],
         ],
     ],
+    'ssrf' => [
+        'nombre' => 'SSRF',
+        'alias' => 'ssrf',
+        'puerto' => '84',
+        'niveles' => [
+            1 => ['el servidor pide por ti', 'lectura'],
+            2 => ['localhost tiene muchos nombres', 'lectura'],
+            3 => ['no solo http', 'lectura'],
+            4 => ['¿qué puerto?', 'lectura'],
+            5 => ['lo que va antes de la arroba', 'lectura'],
+            6 => ['sígueme', 'lectura'],
+            7 => ['solo te dice si funcionó', 'lectura'],
+            8 => ['otro protocolo, otro verbo', 'lectura'],
+            9 => ['la nube sabe quién eres', 'lectura'],
+            10 => ['nombres internos', 'lectura'],
+            11 => ['entidades externas', 'lectura'],
+            12 => ['jefe final', 'lectura'],
+        ],
+    ],
 ];
