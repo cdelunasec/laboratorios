@@ -9,9 +9,11 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 declare -A CATEGORIES=(
     [upload]="file-upload"
     [file-upload]="file-upload"
+    [lfi]="lfi"
 )
 declare -A PORT_PREFIX=(
     [file-upload]="80"
+    [lfi]="81"
 )
 
 if docker compose version >/dev/null 2>&1; then
@@ -36,7 +38,7 @@ Comandos:
   status            Muestra los niveles que están corriendo
   stop-all          Apaga todos los niveles
 
-Categorías: upload (file-upload)
+Categorías: upload (file-upload), lfi
 
 Ejemplo:
   ./lab.sh up upload 1      ->  http://127.0.0.1:8001
@@ -66,6 +68,7 @@ shift || true
 case "$cmd" in
     up)
         resolve "$@"
+        mkdir -p "$ROOT/.flags/lfi"
         dc up -d --build
         echo
         echo "[+] $DIR_CAT nivel $LVL listo en $URL"
@@ -76,6 +79,7 @@ case "$cmd" in
         ;;
     reset)
         resolve "$@"
+        mkdir -p "$ROOT/.flags/lfi"
         dc down -v
         dc up -d --build --force-recreate
         echo
@@ -94,10 +98,10 @@ case "$cmd" in
         done
         ;;
     status)
-        docker ps --filter "label=com.docker.compose.project" --format '{{.Names}}\t{{.Ports}}' | grep -E '^(file-upload)-' || echo "No hay niveles corriendo."
+        docker ps --filter "label=com.docker.compose.project" --format '{{.Names}}\t{{.Ports}}' | grep -E '^(file-upload|lfi)-' || echo "No hay niveles corriendo."
         ;;
     stop-all)
-        ids=$(docker ps -q --filter "name=^file-upload-")
+        ids=$(docker ps -q --filter "name=^file-upload-"; docker ps -q --filter "name=^lfi-")
         [[ -n "$ids" ]] && docker rm -f $ids >/dev/null
         echo "[+] Todos los niveles apagados."
         ;;

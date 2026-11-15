@@ -39,7 +39,7 @@ Eso levanta el nivel 1 de file-upload en `http://127.0.0.1:8001`. El puerto es `
 | `./lab.sh stop-all` | Apaga todo |
 | `./lab.sh list` | Categorías y cuántos niveles tiene cada una |
 
-Categoría disponible: `upload` (alias de `file-upload`).
+Categorías disponibles: `upload` (alias de `file-upload`) y `lfi`.
 
 ## El objetivo
 
@@ -50,7 +50,7 @@ Cada nivel corre en su propio contenedor aislado: lo que hagas en uno no afecta 
 ## Categorías
 
 - [x] **file-upload** — 20 niveles. Subir un archivo arbitrario hasta lograr RCE, burlando defensas cada vez más fuertes.
-- [ ] lfi
+- [x] **lfi** — 20 niveles. Local File Inclusion, de leer un archivo directo a encadenar LFI con RCE.
 - [ ] http / cabeceras
 - [ ] xss
 - [ ] ssrf
@@ -86,3 +86,38 @@ Cada nivel corre en su propio contenedor aislado: lo que hagas en uno no afecta 
 | 20 | Varias capas + `disable_functions` |
 
 ¿Trancado? Cada nivel tiene su pista y su writeup (no se publican en este repo).
+
+## lfi
+
+20 niveles de Local File Inclusion. Puerto `81` + el nivel con dos dígitos (nivel 1 → `8101`, nivel 20 → `8120`).
+
+```bash
+./lab.sh up lfi 1
+```
+
+Los niveles de **lectura** guardan el flag en una ruta conocida (normalmente `/flag.txt`, salvo que el objetivo del nivel diga otra cosa). Los niveles de **RCE** lo esconden en `/flag_XXXX.txt` con nombre aleatorio, así que necesitas ejecutar comandos para encontrarlo. La pista de cada nivel va en el título de la página.
+
+| Nivel | Pista | Tipo | Puerto |
+|---|---|---|---|
+| 1 | sin filtros | lectura | `8101` |
+| 2 | rutas absolutas bloqueadas | lectura | `8102` |
+| 3 | directorio fijo | lectura | `8103` |
+| 4 | extensión forzada | lectura | `8104` |
+| 5 | filtro de una sola pasada | lectura | `8105` |
+| 6 | ruta aprobada | lectura | `8106` |
+| 7 | el filtro mira la URL cruda | lectura | `8107` |
+| 8 | decodificado dos veces | lectura | `8108` |
+| 9 | leer sin ejecutar | lectura | `8109` |
+| 10 | credenciales en el código | lectura | `8110` |
+| 11 | byte nulo (PHP viejo simulado) | lectura | `8111` |
+| 12 | sin barra ni puntos | lectura | `8112` |
+| 13 | datos en línea | rce | `8113` |
+| 14 | el cuerpo de la petición | rce | `8114` |
+| 15 | la bitácora del servidor | rce | `8115` |
+| 16 | sesiones | rce | `8116` |
+| 17 | archivos dentro de archivos | rce | `8117` |
+| 18 | inclusión remota | rce | `8118` |
+| 19 | mira las galletas | lectura | `8119` |
+| 20 | jefe final | rce | `8120` |
+
+> Estado: generado pero todavía sin probar en Docker. Si un nivel no levanta o no se comporta como dice su pista, abre un issue.

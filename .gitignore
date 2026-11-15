@@ -4,3 +4,6 @@ solutions/
 *.log
 .DS_Store
 Thumbs.db
+
+# Hashes de flags generados al levantar niveles
+.flags/

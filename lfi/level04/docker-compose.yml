@@ -1,0 +1,14 @@
+# Lab local de LFI, nivel 04. Solo escucha en 127.0.0.1 (entorno controlado).
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: common/Dockerfile.apache
+      args:
+        LEVEL: "04"
+    image: cdelunasec-labs/lfi:04
+    container_name: lfi-04
+    ports:
+      - "127.0.0.1:8104:80"
+    volumes:
+      - ../../.flags/lfi:/lab-hashes

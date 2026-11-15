@@ -1,0 +1,14 @@
+# Lab local de LFI, nivel 13. Solo escucha en 127.0.0.1 (entorno controlado).
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: common/Dockerfile.apache
+      args:
+        LEVEL: "13"
+    image: cdelunasec-labs/lfi:13
+    container_name: lfi-13
+    ports:
+      - "127.0.0.1:8113:80"
+    volumes:
+      - ../../.flags/lfi:/lab-hashes
