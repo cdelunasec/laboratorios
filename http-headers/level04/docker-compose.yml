@@ -1,0 +1,16 @@
+# Lab local de cabeceras HTTP, nivel 04. Solo escucha en 127.0.0.1 (entorno controlado).
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: common/Dockerfile.apache
+      args:
+        LEVEL: "04"
+    image: cdelunasec-labs/http-headers:04
+    container_name: http-headers-04
+    ports:
+      - "127.0.0.1:8204:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ../../.flags/http-headers:/lab-hashes

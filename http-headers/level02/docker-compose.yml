@@ -1,0 +1,16 @@
+# Lab local de cabeceras HTTP, nivel 02. Solo escucha en 127.0.0.1 (entorno controlado).
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: common/Dockerfile.apache
+      args:
+        LEVEL: "02"
+    image: cdelunasec-labs/http-headers:02
+    container_name: http-headers-02
+    ports:
+      - "127.0.0.1:8202:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ../../.flags/http-headers:/lab-hashes
