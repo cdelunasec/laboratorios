@@ -1,0 +1,33 @@
+FROM php:8.2-apache
+
+# LAB LOCAL INTENCIONALMENTE VULNERABLE (XSS).
+# Entorno controlado de práctica: se publica solo en 127.0.0.1. No exponer a ninguna red.
+# La víctima es el bot compartido (../bot): un Chromium headless con la sesión
+# del admin del nivel, al que el nivel llama por la red interna labs-bot.
+
+COPY common/php-base.ini /usr/local/etc/php/conf.d/00-lab.ini
+COPY common/entrypoint.sh /usr/local/bin/lab-entrypoint
+COPY common/lab.php /var/www/lab/lab.php
+COPY common/flag.sh /opt/lab/flag.sh
+
+ARG LEVEL
+ENV LAB_ID=xss-${LEVEL} LAB_LEVEL=${LEVEL}
+
+COPY common/assets/ /var/www/html/assets/
+COPY common/web/ /var/www/html/
+COPY level${LEVEL}/nivel.php /var/www/lab/nivel.php
+COPY level${LEVEL}/apache.conf /etc/apache2/conf-available/docker-php.conf
+COPY level${LEVEL}/src/ /var/www/html/
+COPY level${LEVEL}/setup.sh /tmp/setup.sh
+
+RUN sed -i 's/\r$//' /usr/local/bin/lab-entrypoint /tmp/setup.sh /opt/lab/flag.sh \
+    && chmod +x /usr/local/bin/lab-entrypoint \
+    && chown -R root:root /var/www/html /var/www/lab /opt/lab \
+    && chmod 755 /var/www/html \
+    && chmod 700 /opt/lab \
+    && mkdir -p /var/lib/labapp/datos \
+    && sh /tmp/setup.sh \
+    && rm /tmp/setup.sh
+
+ENTRYPOINT ["lab-entrypoint"]
+CMD ["apache2-foreground"]

@@ -1,0 +1,34 @@
+# Bot víctima + servidor de exploits, compartidos por los labs de XSS y CSRF.
+# Se levanta con ./lab.sh bot (los niveles de xss/csrf lo levantan solos).
+# El bot no se publica; el servidor de exploits solo en 127.0.0.1:8290.
+services:
+  bot:
+    build:
+      context: ..
+      dockerfile: bot/Dockerfile
+    image: cdelunasec-labs/bot
+    container_name: labs-bot
+    init: true
+    shm_size: "256m"
+    networks:
+      labs:
+        aliases:
+          - bot.labs.test
+
+  exploit:
+    build:
+      context: ..
+      dockerfile: bot/exploit/Dockerfile
+    image: cdelunasec-labs/exploit
+    container_name: labs-exploit
+    ports:
+      - "127.0.0.1:8290:80"
+    networks:
+      labs:
+        aliases:
+          - exploit.labs.test
+
+networks:
+  labs:
+    external: true
+    name: labs-bot

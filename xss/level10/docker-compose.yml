@@ -1,0 +1,25 @@
+# Lab local de XSS, nivel 10. Solo escucha en 127.0.0.1 (entorno controlado).
+# Se une a la red labs-bot para que el bot (el admin) lo vea como xss-10.labs.test.
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: common/Dockerfile.apache
+      args:
+        LEVEL: "10"
+    image: cdelunasec-labs/xss:10
+    container_name: xss-10
+    ports:
+      - "127.0.0.1:8510:80"
+    networks:
+      default: {}
+      labs:
+        aliases:
+          - xss-10.labs.test
+    volumes:
+      - ../../.flags/xss:/lab-hashes
+
+networks:
+  labs:
+    external: true
+    name: labs-bot

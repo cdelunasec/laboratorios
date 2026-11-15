@@ -39,9 +39,10 @@ Eso levanta el nivel 1 de file-upload en `http://127.0.0.1:8001`. El puerto es `
 | `./lab.sh stop-all` | Apaga todo |
 | `./lab.sh list` | Categorías y cuántos niveles tiene cada una |
 
+| `./lab.sh bot` | Levanta el bot víctima y el servidor de exploits en `http://127.0.0.1:8290` (los niveles de xss lo levantan solos) |
 | `./lab.sh panel` | Levanta el panel de flags en `http://127.0.0.1:8200` (`./lab.sh panel down` lo apaga) |
 
-Categorías disponibles: `upload` (alias de `file-upload`), `lfi`, `http` (alias de `http-headers`), `idor` y `ssrf`.
+Categorías disponibles: `upload` (alias de `file-upload`), `lfi`, `http` (alias de `http-headers`), `idor`, `ssrf` y `xss`.
 
 ## El objetivo
 
@@ -59,7 +60,7 @@ Cada nivel corre en su propio contenedor aislado: lo que hagas en uno no afecta 
 - [x] **file-upload** — 20 niveles. Subir un archivo arbitrario hasta lograr RCE, burlando defensas cada vez más fuertes.
 - [x] **lfi** — 20 niveles. Local File Inclusion, de leer un archivo directo a encadenar LFI con RCE.
 - [x] **http-headers** — 20 niveles. Cabeceras HTTP: de cambiar el User-Agent a envenenar enlaces por `Host` y lograr RCE desde una cabecera.
-- [ ] xss
+- [x] **xss** — 15 niveles. Cross-Site Scripting con un admin de verdad (un navegador headless) como víctima: reflejado, almacenado, DOM, filtros, CSP y cookies HttpOnly.
 - [x] **ssrf** — 12 niveles. Server-Side Request Forgery: hacer que el servidor pida por ti, de `127.0.0.1` a gopher, XXE y metadatos de la nube.
 - [ ] csrf
 - [x] **idor** — 12 niveles. Insecure Direct Object Reference: leer (y modificar) datos de otros usuarios, de cambiar un número a encadenar filtraciones en una API.
@@ -224,12 +225,51 @@ Cada nivel tiene un servicio interno que solo escucha dentro del servidor (en `1
 
 > Estado: los 12 niveles se probaron en Docker con un solver automático que los resuelve con la técnica prevista y valida el flag contra el hash del nivel (12/12).
 
+## xss
+
+15 niveles de XSS. Puerto `85` + el nivel con dos dígitos (nivel 1 → `8501`, nivel 15 → `8515`).
+
+```bash
+./lab.sh up xss 1
+```
+
+La víctima es un admin de verdad: un Chromium headless (el **bot**) que entra al nivel con su sesión iniciada cuando se lo pides desde **Reportar al admin**. El flag está en `/admin.php`, que solo ve el admin. Tu trabajo es que tu XSS se ejecute en su navegador y conseguir lo que ve (robando su sesión, o leyendo la página por él cuando la cookie es HttpOnly).
+
+La primera vez que levantas un nivel de xss se construye el bot, que descarga Chromium (~1 GB). Después arranca solo con cada nivel.
+
+Para recibir lo que exfiltres tienes el **servidor de exploits** en `http://127.0.0.1:8290`:
+
+- Guardas páginas o scripts y quedan servidos en `http://exploit.labs.test/p/<nombre>` (así los ven el bot y los niveles).
+- Cualquier otra petición a `http://exploit.labs.test/...` responde `ok` y queda en el registro (`http://127.0.0.1:8290/log`): ahí ves lo que te mande el navegador del admin.
+
+Ojo con las direcciones: el admin ve el nivel como `http://xss-NN.labs.test`, no como `127.0.0.1`. En Reportar al admin mandas una ruta del sitio (`/?q=...`) o una página del servidor de exploits.
+
+| Nivel | Pista | Puerto |
+|---|---|---|
+| 1 | sin filtros | `8501` |
+| 2 | se queda guardado | `8502` |
+| 3 | dentro de un atributo | `8503` |
+| 4 | dentro de un script | `8504` |
+| 5 | sin la etiqueta script | `8505` |
+| 6 | entidades HTML | `8506` |
+| 7 | nunca llega al servidor | `8507` |
+| 8 | mensajes entre ventanas | `8508` |
+| 9 | la política confía en ti misma | `8509` |
+| 10 | rutas relativas | `8510` |
+| 11 | la galleta no se deja tocar | `8511` |
+| 12 | pocas letras | `8512` |
+| 13 | un enlace que ejecuta | `8513` |
+| 14 | decodificado de más | `8514` |
+| 15 | jefe final | `8515` |
+
+> Estado: los 15 niveles construyen y levantan en Docker, el bot entra con la sesión del admin cuando se le avisa y `/admin.php` niega el acceso a cualquier otro. Lo que **no** se ha probado es que cada nivel se resuelva con su técnica. Si uno no se comporta como dice su pista, abre un issue.
+
 ## Panel de flags
 
 ```bash
 ./lab.sh panel
 ```
 
-Abre `http://127.0.0.1:8200`, pega un flag y el panel te dice si es el del nivel. Valida **lfi**, **http-headers**, **idor** y **ssrf**. Nunca conoce los flags: cada nivel, al arrancar, deja el SHA-256 de su flag en `.flags/<categoría>/<NN>` y el panel compara contra eso. Si reinicias un nivel el flag cambia, así que un flag viejo deja de valer.
+Abre `http://127.0.0.1:8200`, pega un flag y el panel te dice si es el del nivel. Valida **lfi**, **http-headers**, **idor**, **ssrf** y **xss**. Nunca conoce los flags: cada nivel, al arrancar, deja el SHA-256 de su flag en `.flags/<categoría>/<NN>` y el panel compara contra eso. Si reinicias un nivel el flag cambia, así que un flag viejo deja de valer.
 
 El progreso (qué resolviste y cuándo) se guarda en `.flags/panel/progreso.json`. Cada categoría tiene un botón para reiniciar su progreso.
