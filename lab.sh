@@ -14,11 +14,13 @@ declare -A CATEGORIES=(
     [headers]="http-headers"
     [cabeceras]="http-headers"
     [http-headers]="http-headers"
+    [idor]="idor"
 )
 declare -A PORT_PREFIX=(
     [file-upload]="80"
     [lfi]="81"
     [http-headers]="82"
+    [idor]="83"
 )
 
 if docker compose version >/dev/null 2>&1; then
@@ -44,7 +46,7 @@ Comandos:
   stop-all          Apaga todos los niveles (el panel queda aparte)
   panel [up|down]   Levanta o apaga el panel de flags en http://127.0.0.1:8200
 
-Categorías: upload (file-upload), lfi, http (http-headers)
+Categorías: upload (file-upload), lfi, http (http-headers), idor
 
 Ejemplo:
   ./lab.sh up upload 1      ->  http://127.0.0.1:8001
@@ -68,6 +70,20 @@ dc() {
     "${COMPOSE[@]}" -p "$PROJECT" -f "$LEVEL_DIR/docker-compose.yml" "$@"
 }
 
+# Los niveles que validan con el panel escriben el hash de su flag al arrancar.
+# Espera a que aparezca el hash nuevo para no anunciar el nivel antes de tiempo.
+wait_hash() {
+    local since="$1" f="$ROOT/.flags/$DIR_CAT/$LVL"
+    grep -q lab-hashes "$LEVEL_DIR/docker-compose.yml" || return 0
+    for _ in $(seq 1 60); do
+        if [[ -f "$f" ]] && (( $(stat -c %Y "$f" 2>/dev/null || echo 0) >= since )); then
+            return 0
+        fi
+        sleep 0.5
+    done
+    echo "[!] El nivel no publicó su hash en 30 s. Revisa: ./lab.sh logs $DIR_CAT $((10#$LVL))" >&2
+}
+
 cmd="${1:-}"
 shift || true
 
@@ -75,7 +91,9 @@ case "$cmd" in
     up)
         resolve "$@"
         mkdir -p "$ROOT/.flags/$DIR_CAT"
+        since=$(date +%s)
         dc up -d --build
+        wait_hash "$since"
         echo
         echo "[+] $DIR_CAT nivel $LVL listo en $URL"
         ;;
@@ -87,7 +105,9 @@ case "$cmd" in
         resolve "$@"
         mkdir -p "$ROOT/.flags/$DIR_CAT"
         dc down -v
+        since=$(date +%s)
         dc up -d --build --force-recreate
+        wait_hash "$since"
         echo
         echo "[+] $DIR_CAT nivel $LVL reiniciado en $URL"
         ;;
@@ -104,14 +124,14 @@ case "$cmd" in
         done
         ;;
     status)
-        docker ps --filter "label=com.docker.compose.project" --format '{{.Names}}\t{{.Ports}}' | grep -E '^(file-upload|lfi|http-headers|panel)' || echo "No hay niveles corriendo."
+        docker ps --filter "label=com.docker.compose.project" --format '{{.Names}}\t{{.Ports}}' | grep -E '^(file-upload|lfi|http-headers|idor|panel)' || echo "No hay niveles corriendo."
         ;;
     stop-all)
-        ids=$(docker ps -q --filter "name=^file-upload-"; docker ps -q --filter "name=^lfi-"; docker ps -q --filter "name=^http-headers-")
+        ids=$(docker ps -q --filter "name=^file-upload-"; docker ps -q --filter "name=^lfi-"; docker ps -q --filter "name=^http-headers-"; docker ps -q --filter "name=^idor-")
         [[ -n "$ids" ]] && docker rm -f $ids >/dev/null
         # Borrar también las redes de cada nivel: si se quedan, Docker se
         # queda sin rangos de subred y los niveles nuevos no levantan.
-        nets=$(docker network ls -q --filter "name=^file-upload-"; docker network ls -q --filter "name=^lfi-"; docker network ls -q --filter "name=^http-headers-")
+        nets=$(docker network ls -q --filter "name=^file-upload-"; docker network ls -q --filter "name=^lfi-"; docker network ls -q --filter "name=^http-headers-"; docker network ls -q --filter "name=^idor-")
         [[ -n "$nets" ]] && docker network rm $nets >/dev/null 2>&1 || true
         echo "[+] Todos los niveles apagados."
         ;;
@@ -119,7 +139,7 @@ case "$cmd" in
         PANEL=("${COMPOSE[@]}" -p panel -f "$ROOT/panel/docker-compose.yml")
         case "${1:-up}" in
             up)
-                mkdir -p "$ROOT/.flags/panel" "$ROOT/.flags/lfi" "$ROOT/.flags/http-headers"
+                mkdir -p "$ROOT/.flags/panel" "$ROOT/.flags/lfi" "$ROOT/.flags/http-headers" "$ROOT/.flags/idor"
                 "${PANEL[@]}" up -d --build
                 echo
                 echo "[+] Panel de flags listo en http://127.0.0.1:8200"

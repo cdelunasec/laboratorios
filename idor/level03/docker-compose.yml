@@ -1,0 +1,14 @@
+# Lab local de IDOR, nivel 03. Solo escucha en 127.0.0.1 (entorno controlado).
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: common/Dockerfile
+      args:
+        LEVEL: "03"
+    image: cdelunasec-labs/idor:03
+    container_name: idor-03
+    ports:
+      - "127.0.0.1:8303:80"
+    volumes:
+      - ../../.flags/idor:/lab-hashes

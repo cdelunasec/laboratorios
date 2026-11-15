@@ -1,5 +1,5 @@
 <?php
-// Panel local de flags (http-headers + LFI). Nunca conoce los flags: compara
+// Panel local de flags (LFI, http-headers e IDOR). Nunca conoce los flags: compara
 // hash('sha256', flag) con el hash que dejó cada nivel al arrancar.
 
 const FLAGS = '/flags';

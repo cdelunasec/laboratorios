@@ -57,4 +57,23 @@ return [
             20 => ['jefe final', 'rce'],
         ],
     ],
+    'idor' => [
+        'nombre' => 'IDOR',
+        'alias' => 'idor',
+        'puerto' => '83',
+        'niveles' => [
+            1 => ['cambia el número', 'lectura'],
+            2 => ['lo oculto en el formulario', 'lectura'],
+            3 => ['enumera', 'lectura'],
+            4 => ['codificado no es cifrado', 'lectura'],
+            5 => ['un hash predecible', 'lectura'],
+            6 => ['identificadores que se filtran', 'lectura'],
+            7 => ['no solo se lee', 'lectura'],
+            8 => ['dos veces el mismo parámetro', 'lectura'],
+            9 => ['versiones viejas', 'lectura'],
+            10 => ['archivos generados', 'lectura'],
+            11 => ['funciones, no objetos', 'lectura'],
+            12 => ['jefe final', 'lectura'],
+        ],
+    ],
 ];

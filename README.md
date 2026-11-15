@@ -41,11 +41,16 @@ Eso levanta el nivel 1 de file-upload en `http://127.0.0.1:8001`. El puerto es `
 
 | `./lab.sh panel` | Levanta el panel de flags en `http://127.0.0.1:8200` (`./lab.sh panel down` lo apaga) |
 
-Categorías disponibles: `upload` (alias de `file-upload`), `lfi` y `http` (alias de `http-headers`).
+Categorías disponibles: `upload` (alias de `file-upload`), `lfi`, `http` (alias de `http-headers`) e `idor`.
 
 ## El objetivo
 
-Cada nivel esconde un archivo `/flag_XXXX.txt` con un nombre aleatorio. No lo puedes adivinar: tienes que conseguir **ejecución de comandos** en el servidor, listar el sistema de archivos y leerlo. El flag tiene el formato `cdelunasec{...}`.
+Cada nivel esconde un flag con el formato `cdelunasec{...}`. Dónde está depende del tipo de nivel:
+
+- **RCE** (todo file-upload y parte de lfi y http-headers): en un archivo `/flag_XXXX.txt` con nombre aleatorio. No lo puedes adivinar: tienes que conseguir **ejecución de comandos**, listar el sistema de archivos y leerlo.
+- **Lectura**: la propia app te lo entrega cuando burlas el control (o lo lees de una ruta conocida, en lfi). Cada categoría explica abajo dónde buscarlo.
+
+El flag cambia cada vez que levantas o reinicias un nivel. Para comprobar si el tuyo es correcto usa el [panel de flags](#panel-de-flags).
 
 Cada nivel corre en su propio contenedor aislado: lo que hagas en uno no afecta a los demás.
 
@@ -57,7 +62,7 @@ Cada nivel corre en su propio contenedor aislado: lo que hagas en uno no afecta 
 - [ ] xss
 - [ ] ssrf
 - [ ] csrf
-- [ ] idor
+- [x] **idor** — 12 niveles. Insecure Direct Object Reference: leer (y modificar) datos de otros usuarios, de cambiar un número a encadenar filtraciones en una API.
 - [ ] web (cadena completa)
 
 ## file-upload
@@ -163,12 +168,39 @@ Algunos niveles responden distinto según el nombre de host que mandes: no hace 
 
 > Estado: los 20 niveles se probaron en Docker con un solver automático que los resuelve con la técnica prevista y valida el flag contra el hash del nivel (20/20).
 
+## idor
+
+12 niveles de IDOR (Insecure Direct Object Reference). Puerto `83` + el nivel con dos dígitos (nivel 1 → `8301`, nivel 12 → `8312`).
+
+```bash
+./lab.sh up idor 1
+```
+
+En todos entras con tu propia cuenta, `carlos` / `carlos123`, y el objetivo es llegar a datos que no son tuyos (casi siempre del administrador). El flag está escondido en esos datos: cuando lo encuentras, lo pegas en el panel. La pista de cada nivel va en el título de la página.
+
+| Nivel | Pista | Puerto |
+|---|---|---|
+| 1 | cambia el número | `8301` |
+| 2 | lo oculto en el formulario | `8302` |
+| 3 | enumera | `8303` |
+| 4 | codificado no es cifrado | `8304` |
+| 5 | un hash predecible | `8305` |
+| 6 | identificadores que se filtran | `8306` |
+| 7 | no solo se lee | `8307` |
+| 8 | dos veces el mismo parámetro | `8308` |
+| 9 | versiones viejas | `8309` |
+| 10 | archivos generados | `8310` |
+| 11 | funciones, no objetos | `8311` |
+| 12 | jefe final | `8312` |
+
+> Estado: los 12 niveles se probaron en Docker con un solver automático que los resuelve con la técnica prevista y valida el flag contra el hash del nivel (12/12).
+
 ## Panel de flags
 
 ```bash
 ./lab.sh panel
 ```
 
-Abre `http://127.0.0.1:8200`, pega un flag y el panel te dice si es el del nivel. Valida **lfi** y **http-headers**. Nunca conoce los flags: cada nivel, al arrancar, deja el SHA-256 de su flag en `.flags/<categoría>/<NN>` y el panel compara contra eso. Si reinicias un nivel el flag cambia, así que un flag viejo deja de valer.
+Abre `http://127.0.0.1:8200`, pega un flag y el panel te dice si es el del nivel. Valida **lfi**, **http-headers** e **idor**. Nunca conoce los flags: cada nivel, al arrancar, deja el SHA-256 de su flag en `.flags/<categoría>/<NN>` y el panel compara contra eso. Si reinicias un nivel el flag cambia, así que un flag viejo deja de valer.
 
 El progreso (qué resolviste y cuándo) se guarda en `.flags/panel/progreso.json`. Cada categoría tiene un botón para reiniciar su progreso.
