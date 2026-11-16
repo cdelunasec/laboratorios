@@ -1,0 +1,46 @@
+FROM php:8.2-apache
+
+# LAB LOCAL INTENCIONALMENTE VULNERABLE (aplicaciones web completas).
+# Entorno controlado de práctica: se publica solo en 127.0.0.1. No exponer a ninguna red.
+# Sin apt-get: todo lo que usan los niveles ya viene en la imagen de PHP.
+#
+# Cada nivel es una aplicación entera con varias fallas que hay que encadenar
+# hasta ejecutar comandos. Estructura de un nivel:
+#   src/        lo que publica Apache (/var/www/html)
+#   lib/        código de la app fuera del webroot (/var/www/lib)
+#   _interno/   (opcional, dentro de src/) servicio que solo escucha en 127.0.0.1
+#   arranque.sh lo que el nivel levanta al iniciar (servicios internos)
+
+RUN useradd -r -M -d /nonexistent -s /usr/sbin/nologin interno
+
+COPY common/php-base.ini /usr/local/etc/php/conf.d/00-lab.ini
+COPY common/entrypoint.sh /usr/local/bin/lab-entrypoint
+COPY common/start-interno.sh /usr/local/bin/start-interno
+COPY common/flag.sh /opt/lab/flag.sh
+
+ARG LEVEL
+ENV LAB_ID=web-${LEVEL} LAB_LEVEL=${LEVEL}
+
+COPY common/assets/ /var/www/html/assets/
+COPY level${LEVEL}/apache.conf /etc/apache2/conf-available/docker-php.conf
+COPY level${LEVEL}/php.ini /usr/local/etc/php/conf.d/99-level.ini
+COPY level${LEVEL}/lib/ /var/www/lib/
+COPY common/lab.php /var/www/lib/lab.php
+COPY level${LEVEL}/src/ /var/www/html/
+COPY level${LEVEL}/setup.sh /tmp/setup.sh
+COPY level${LEVEL}/arranque.sh /opt/lab/arranque.sh
+
+RUN sed -i 's/\r$//' /usr/local/bin/lab-entrypoint /usr/local/bin/start-interno /tmp/setup.sh /opt/lab/flag.sh /opt/lab/arranque.sh \
+    && chmod +x /usr/local/bin/lab-entrypoint /usr/local/bin/start-interno \
+    && if [ -d /var/www/html/_interno ]; then mv /var/www/html/_interno /opt/interno; fi \
+    && chown -R root:root /var/www/html /var/www/lib /opt/lab \
+    && chmod 755 /var/www/html /var/www/lib \
+    && chmod 700 /opt/lab \
+    && mkdir -p /var/lib/labapp/datos /var/lib/interno \
+    && chown interno:interno /var/lib/interno \
+    && chmod 700 /var/lib/interno \
+    && sh /tmp/setup.sh \
+    && rm /tmp/setup.sh
+
+ENTRYPOINT ["lab-entrypoint"]
+CMD ["apache2-foreground"]

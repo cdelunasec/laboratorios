@@ -136,4 +136,14 @@ return [
             12 => ['jefe final', 'lectura'],
         ],
     ],
+    'web' => [
+        'nombre' => 'Web completa',
+        'alias' => 'web',
+        'puerto' => '87',
+        'niveles' => [
+            1 => ['las cuentas de los demás', 'rce'],
+            2 => ['la oficina confía en lo que le dices', 'rce'],
+            3 => ['el moderador lo lee todo', 'rce'],
+        ],
+    ],
 ];

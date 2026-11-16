@@ -18,6 +18,7 @@ declare -A CATEGORIES=(
     [ssrf]="ssrf"
     [xss]="xss"
     [csrf]="csrf"
+    [web]="web"
 )
 declare -A PORT_PREFIX=(
     [file-upload]="80"
@@ -27,9 +28,8 @@ declare -A PORT_PREFIX=(
     [ssrf]="84"
     [xss]="85"
     [csrf]="86"
+    [web]="87"
 )
-# Categorías cuya víctima es el bot compartido (Chromium headless).
-BOT_CATS=" xss csrf "
 BOT_NET="labs-bot"
 
 if docker compose version >/dev/null 2>&1; then
@@ -55,9 +55,9 @@ Comandos:
   stop-all          Apaga todos los niveles (el panel y el bot quedan aparte)
   panel [up|down]   Levanta o apaga el panel de flags en http://127.0.0.1:8200
   bot [up|down]     Levanta o apaga el bot víctima y el servidor de exploits
-                    (http://127.0.0.1:8290). Los niveles de xss y csrf lo levantan solos.
+                    (http://127.0.0.1:8290). Los niveles que lo usan lo levantan solos.
 
-Categorías: upload (file-upload), lfi, http (http-headers), idor, ssrf, xss, csrf
+Categorías: upload (file-upload), lfi, http (http-headers), idor, ssrf, xss, csrf, web
 
 Ejemplo:
   ./lab.sh up upload 1      ->  http://127.0.0.1:8001
@@ -90,9 +90,10 @@ ensure_bot_net() {
     docker network inspect "$BOT_NET" >/dev/null 2>&1 || docker network create "$BOT_NET" >/dev/null
 }
 
-# Si el nivel necesita al bot, lo levanta (la primera vez descarga Chromium).
+# Si el nivel necesita al bot (su compose usa la red labs-bot), lo levanta.
+# La primera vez descarga Chromium.
 ensure_bot() {
-    [[ "$BOT_CATS" == *" $DIR_CAT "* ]] || return 0
+    grep -q "name: $BOT_NET" "$LEVEL_DIR/docker-compose.yml" || return 0
     ensure_bot_net
     if [[ -z "$(docker ps -q --filter name=^labs-bot$)" || -z "$(docker ps -q --filter name=^labs-exploit$)" ]]; then
         echo "[*] Levantando el bot víctima y el servidor de exploits..."

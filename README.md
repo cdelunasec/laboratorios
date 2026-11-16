@@ -39,16 +39,16 @@ Eso levanta el nivel 1 de file-upload en `http://127.0.0.1:8001`. El puerto es `
 | `./lab.sh stop-all` | Apaga todo |
 | `./lab.sh list` | Categorías y cuántos niveles tiene cada una |
 
-| `./lab.sh bot` | Levanta el bot víctima y el servidor de exploits en `http://127.0.0.1:8290` (los niveles de xss y csrf lo levantan solos) |
+| `./lab.sh bot` | Levanta el bot víctima y el servidor de exploits en `http://127.0.0.1:8290` (los niveles que lo usan lo levantan solos) |
 | `./lab.sh panel` | Levanta el panel de flags en `http://127.0.0.1:8200` (`./lab.sh panel down` lo apaga) |
 
-Categorías disponibles: `upload` (alias de `file-upload`), `lfi`, `http` (alias de `http-headers`), `idor`, `ssrf`, `xss` y `csrf`.
+Categorías disponibles: `upload` (alias de `file-upload`), `lfi`, `http` (alias de `http-headers`), `idor`, `ssrf`, `xss`, `csrf` y `web`.
 
 ## El objetivo
 
 Cada nivel esconde un flag con el formato `cdelunasec{...}`. Dónde está depende del tipo de nivel:
 
-- **RCE** (todo file-upload y parte de lfi y http-headers): en un archivo `/flag_XXXX.txt` con nombre aleatorio. No lo puedes adivinar: tienes que conseguir **ejecución de comandos**, listar el sistema de archivos y leerlo.
+- **RCE** (todo file-upload y web, y parte de lfi y http-headers): en un archivo `/flag_XXXX.txt` con nombre aleatorio. No lo puedes adivinar: tienes que conseguir **ejecución de comandos**, listar el sistema de archivos y leerlo.
 - **Lectura**: la propia app te lo entrega cuando burlas el control (o lo lees de una ruta conocida, en lfi). Cada categoría explica abajo dónde buscarlo.
 
 El flag cambia cada vez que levantas o reinicias un nivel. Para comprobar si el tuyo es correcto usa el [panel de flags](#panel-de-flags).
@@ -64,7 +64,7 @@ Cada nivel corre en su propio contenedor aislado: lo que hagas en uno no afecta 
 - [x] **ssrf** — 12 niveles. Server-Side Request Forgery: hacer que el servidor pida por ti, de `127.0.0.1` a gopher, XXE y metadatos de la nube.
 - [x] **csrf** — 12 niveles. Cross-Site Request Forgery contra un admin de verdad (el mismo bot): sin protección, tokens mal validados, Referer, SameSite, JSON y CORS.
 - [x] **idor** — 12 niveles. Insecure Direct Object Reference: leer (y modificar) datos de otros usuarios, de cambiar un número a encadenar filtraciones en una API.
-- [ ] web (cadena completa)
+- [x] **web** — 3 aplicaciones completas (de momento). Cada una tiene varias fallas que hay que encadenar, como en una máquina, hasta ejecutar comandos.
 
 ## file-upload
 
@@ -293,12 +293,32 @@ El servidor de exploits (`http://127.0.0.1:8290`) está en `exploit.labs.test` y
 
 > Estado: los 12 niveles construyen y levantan en Docker, el bot entra con la sesión del admin, y el camino legítimo (el admin cambiando un rol con su sesión y, donde aplica, su token) funciona y hace que carlos vea el flag en el panel. Lo que **no** se ha probado es que cada nivel se resuelva con su técnica de CSRF. Si uno no se comporta como dice su pista, abre un issue.
 
+## web
+
+Aplicaciones completas, no niveles de una sola técnica. Puerto `87` + el nivel con dos dígitos (web 1 → `8701`).
+
+```bash
+./lab.sh up web 1
+```
+
+Cada web parece una app normal (una tienda, una mesa de ayuda, un foro) y esconde varias fallas de las categorías anteriores. Ninguna te da el flag sola: tienes que encontrarlas y encadenarlas, como en una máquina, hasta ejecutar comandos. El flag está en `/flag_XXXX.txt` con nombre aleatorio. No se dice qué técnicas lleva cada una; la pista va en el título de la página.
+
+| Web | App | Pista | Puerto |
+|---|---|---|---|
+| 1 | Papelería Colón (tienda) | las cuentas de los demás | `8701` |
+| 2 | SoporteYa (mesa de ayuda) | la oficina confía en lo que le dices | `8702` |
+| 3 | Foro Quisqueya | el moderador lo lee todo | `8703` |
+
+> La web 3 usa el bot de xss/csrf como víctima y el servidor de exploits (`http://127.0.0.1:8290`); lo levanta sola. Si en una web dañas algo que necesitas (por ejemplo, rompes un archivo con código mal escrito), `./lab.sh reset web <n>` la deja como nueva.
+
+> Estado: las 3 webs se probaron en Docker con un solver automático que recorre la cadena prevista y valida el flag contra el hash del nivel (3/3).
+
 ## Panel de flags
 
 ```bash
 ./lab.sh panel
 ```
 
-Abre `http://127.0.0.1:8200`, pega un flag y el panel te dice si es el del nivel. Valida **lfi**, **http-headers**, **idor**, **ssrf**, **xss** y **csrf**. Nunca conoce los flags: cada nivel, al arrancar, deja el SHA-256 de su flag en `.flags/<categoría>/<NN>` y el panel compara contra eso. Si reinicias un nivel el flag cambia, así que un flag viejo deja de valer.
+Abre `http://127.0.0.1:8200`, pega un flag y el panel te dice si es el del nivel. Valida **lfi**, **http-headers**, **idor**, **ssrf**, **xss**, **csrf** y **web**. Nunca conoce los flags: cada nivel, al arrancar, deja el SHA-256 de su flag en `.flags/<categoría>/<NN>` y el panel compara contra eso. Si reinicias un nivel el flag cambia, así que un flag viejo deja de valer.
 
 El progreso (qué resolviste y cuándo) se guarda en `.flags/panel/progreso.json`. Cada categoría tiene un botón para reiniciar su progreso.
