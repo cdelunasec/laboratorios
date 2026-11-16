@@ -1,0 +1,215 @@
+/* Base de las webs del lab (jefes finales). Cada app redefine los tokens y
+   las fuentes en su propio CSS; aquí van los componentes compartidos.
+   Layout: barra de la app arriba, una página con un solo protagonista
+   (el hero o el formulario), tarjetas por relleno y mucho aire. */
+@import url("fonts.css");
+
+:root {
+  --bg: #0d0d10; --surface: #15151a; --surface-2: #1c1c23; --surface-3: #25252e;
+  --line: rgba(255, 255, 255, .07); --line-strong: rgba(255, 255, 255, .16);
+  --accent: #9aa0ff; --accent-hi: #c6c9ff; --accent-soft: rgba(154, 160, 255, .14); --on-accent: #0b0b1a;
+  --text: #ececf1; --white: #fff; --muted: #9a9aa8; --faint: #62626e;
+  --ok: #5be3a0; --warn: #ffc35c; --danger: #ff6b81;
+  --f-display: system-ui, sans-serif; --f-body: system-ui, sans-serif; --f-mono: ui-monospace, monospace;
+  --r-lg: 24px; --r: 16px; --r-sm: 11px;
+  --sombra: 0 10px 30px rgba(0, 0, 0, .35);
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+::selection { background: var(--accent); color: var(--on-accent); }
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.6 var(--f-body);
+  display: flex;
+  flex-direction: column;
+}
+
+a { color: var(--accent-hi); text-decoration-color: var(--accent-soft); text-underline-offset: 3px; }
+a:hover { color: var(--white); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+code, kbd, .mono { font-family: var(--f-mono); font-size: .92em; }
+code { color: var(--accent-hi); }
+h1, h2, h3 { font-family: var(--f-display); color: var(--white); line-height: 1.15; text-wrap: balance; margin: 0; }
+h2 { font-size: 21px; }
+h3 { font-size: 17px; }
+p { margin: 0 0 14px; }
+
+/* ---------- Barra de la app ---------- */
+.top {
+  position: sticky; top: 0; z-index: 20;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+.top-in {
+  max-width: 1100px; margin: 0 auto; padding: 14px 24px;
+  display: flex; align-items: center; gap: 22px;
+}
+.marca {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--white); text-decoration: none;
+  font: 700 19px/1 var(--f-display); letter-spacing: -.01em; white-space: nowrap;
+}
+.marca svg { width: 30px; height: 30px; flex: none; }
+.nav { display: flex; gap: 4px; padding: 4px; background: var(--surface); border-radius: 999px; overflow-x: auto; scrollbar-width: none; }
+.nav a {
+  padding: 7px 14px; border-radius: 999px; white-space: nowrap;
+  color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 600;
+  transition: color .18s, background .18s;
+}
+.nav a:hover { color: var(--text); background: var(--surface-2); }
+.nav a.activo { color: var(--on-accent); background: var(--accent); }
+.sesion { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); white-space: nowrap; }
+.sesion a { color: var(--text); }
+.avatar {
+  width: 30px; height: 30px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent-hi);
+  font: 700 13px/1 var(--f-display); text-transform: uppercase;
+}
+
+/* ---------- Página ---------- */
+.page { flex: 1; width: 100%; max-width: 1100px; margin: 0 auto; padding: 40px 24px 72px; }
+.page.estrecha { max-width: 560px; }
+.page-head { margin-bottom: 28px; }
+.page-head h1 { font-size: clamp(26px, 4vw, 36px); }
+.page-head p { color: var(--muted); margin: 8px 0 0; }
+.seccion { margin-top: 40px; }
+.seccion > h2 { margin-bottom: 16px; }
+.pie { color: var(--faint); font-size: 13px; text-align: center; padding: 24px; border-top: 1px solid var(--line); }
+
+/* ---------- Componentes ---------- */
+.card { background: var(--surface); border-radius: var(--r); padding: 22px; box-shadow: var(--sombra); }
+.card.plano { box-shadow: none; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.muted { color: var(--muted); }
+.chica { font-size: 13px; }
+
+.btn, button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 20px; border: 0; border-radius: var(--r-sm);
+  background: var(--accent); color: var(--on-accent);
+  font: 700 15px/1 var(--f-body); text-decoration: none; cursor: pointer;
+  transition: transform .15s, filter .15s, background .15s;
+}
+.btn:hover, button:hover { filter: brightness(1.08); transform: translateY(-1px); color: var(--on-accent); }
+.btn:active, button:active { transform: translateY(1px); }
+.btn.ghost, button.ghost { background: var(--surface-2); color: var(--text); }
+.btn.ghost:hover, button.ghost:hover { background: var(--surface-3); color: var(--white); }
+
+form.form { display: grid; gap: 16px; }
+form.form > button { justify-self: start; }
+.campo { display: grid; gap: 7px; }
+.campo label, label { font-size: 14px; font-weight: 600; color: var(--muted); }
+input[type="text"], input[type="password"], input[type="email"], textarea, select {
+  width: 100%; padding: 12px 14px;
+  background: var(--surface-2); color: var(--text);
+  border: 1px solid transparent; border-radius: var(--r-sm);
+  font: 15px/1.4 var(--f-body);
+  transition: border-color .15s, background .15s;
+}
+textarea { resize: vertical; min-height: 110px; }
+input::placeholder, textarea::placeholder { color: var(--faint); }
+input:hover, textarea:hover { background: var(--surface-3); }
+input:focus, textarea:focus { outline: none; border-color: var(--accent); background: var(--surface-3); }
+input[type="file"] {
+  width: 100%; padding: 22px; border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--muted);
+  border: 1.5px dashed var(--line-strong); font: 14px var(--f-body); cursor: pointer;
+}
+input[type="file"]::file-selector-button {
+  margin-right: 14px; padding: 8px 14px; border: 0; border-radius: 8px;
+  background: var(--accent-soft); color: var(--accent-hi); font: 700 13px var(--f-body); cursor: pointer;
+}
+
+.aviso {
+  display: flex; gap: 12px; align-items: flex-start;
+  margin: 0 0 20px; padding: 14px 16px; border-radius: var(--r-sm);
+  background: var(--surface-2); font-size: 15px; word-break: break-word;
+}
+.aviso::before { content: ""; flex: none; width: 9px; height: 9px; margin-top: 7px; border-radius: 50%; background: var(--muted); }
+.aviso.ok { background: color-mix(in srgb, var(--ok) 11%, var(--surface)); }
+.aviso.ok::before { background: var(--ok); box-shadow: 0 0 10px var(--ok); }
+.aviso.err { background: color-mix(in srgb, var(--danger) 11%, var(--surface)); }
+.aviso.err::before { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 11px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent-hi);
+  font-size: 13px; font-weight: 600; white-space: nowrap;
+}
+.chip.gris { background: var(--surface-3); color: var(--muted); }
+.punto { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; }
+
+table.tabla { width: 100%; border-collapse: separate; border-spacing: 0 6px; font-size: 15px; }
+.tabla th { text-align: left; font-size: 13px; font-weight: 600; color: var(--faint); padding: 0 14px 10px; }
+.tabla td { padding: 13px 14px; background: var(--surface); }
+.tabla tr td:first-child { border-radius: var(--r-sm) 0 0 var(--r-sm); }
+.tabla tr td:last-child { border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.tabla tr:hover td { background: var(--surface-2); }
+
+pre {
+  margin: 0; padding: 18px 20px; border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--bg) 60%, black); color: var(--text);
+  font: 13.5px/1.6 var(--f-mono); white-space: pre-wrap; word-break: break-all;
+  max-height: 560px; overflow: auto;
+}
+
+.vacio { text-align: center; padding: 34px 20px; color: var(--muted); }
+.vacio strong { display: block; color: var(--text); font-size: 17px; margin-bottom: 4px; }
+
+/* Tarjetas con una luz que sigue al cursor (la mueve base.js). */
+.spot { position: relative; isolation: isolate; }
+.spot::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), var(--accent-soft), transparent 70%);
+  opacity: 0; transition: opacity .25s;
+}
+.spot:hover::after { opacity: 1; }
+
+/* Entrada escalonada, sutil. El contenido se ve aunque no corra el JS. */
+@keyframes entrar { from { transform: translateY(14px); } to { transform: none; } }
+.ld { animation: entrar .6s cubic-bezier(.2, .7, .2, 1) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
+
+/* ---------- Píldora del lab ---------- */
+.lab-pill {
+  position: fixed; right: 18px; bottom: 18px; z-index: 50;
+  max-width: min(340px, calc(100vw - 36px));
+  font: 13px/1.5 ui-monospace, "JetBrains Mono", Consolas, monospace;
+  color: #d8dbe6;
+}
+.lab-pill summary {
+  list-style: none; cursor: pointer; margin-left: auto; width: max-content;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 999px;
+  background: rgba(10, 11, 16, .88); backdrop-filter: blur(10px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .45), inset 0 0 0 1px rgba(255, 255, 255, .08);
+}
+.lab-pill summary::-webkit-details-marker { display: none; }
+.lab-pill summary b { color: #fff; font-weight: 600; }
+.lab-pill .led { width: 8px; height: 8px; border-radius: 50%; background: #5be3a0; box-shadow: 0 0 10px #5be3a0; }
+.lab-pill .info {
+  margin-bottom: 10px; padding: 16px 18px; border-radius: 16px;
+  background: rgba(10, 11, 16, .94); backdrop-filter: blur(10px);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, .5), inset 0 0 0 1px rgba(255, 255, 255, .08);
+}
+.lab-pill[open] { display: flex; flex-direction: column-reverse; }
+.lab-pill .info p { margin: 0 0 8px; }
+.lab-pill .info p:last-child { margin: 0; }
+.lab-pill .info span { color: #8a8fa3; }
+
+@media (max-width: 720px) {
+  .top-in { flex-wrap: wrap; gap: 12px; padding: 12px 16px; }
+  .nav { order: 3; width: 100%; }
+  .page { padding: 28px 16px 90px; }
+  .tabla { font-size: 14px; }
+  .tabla td { padding: 11px 10px; }
+}

@@ -14,9 +14,9 @@ datos_guardar('reportes', $r);
 $cookie = ['name' => MOD_COOKIE, 'value' => admin_token(), 'domain' => lab_host(), 'httpOnly' => false, 'sameSite' => 'Lax'];
 [$ok, $msg] = bot_visitar('http://' . lab_host() . "/tema.php?id=$id", [$cookie]);
 
-cabecera('Reporte enviado.');
+cabecera('Reporte enviado', '', true);
 lab_alert($ok ? 'ok' : 'err', $ok
     ? "Gracias. El moderador ya revisó el tema #$id."
     : "No se pudo avisar al moderador ($msg). ¿Está corriendo el bot? ./lab.sh bot");
-echo '<p><a href="/tema.php?id=' . $id . '">← Volver al tema</a></p>';
+echo '  <p class="ld"><a class="btn ghost" href="/tema.php?id=' . $id . '">← Volver al tema</a></p>' . "\n";
 lab_footer();

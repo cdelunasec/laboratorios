@@ -6,6 +6,9 @@ const LAB_APP = 'Foro Quisqueya';
 const LAB_HINT = 'el moderador lo lee todo';
 const LAB_EXTRA = 'Servidor de exploits: http://127.0.0.1:8290';
 const MOD_COOKIE = 'mod_sesion';
+const LAB_TEMA = 'foro';
+const LAB_PIE = 'Foro Quisqueya · la comunidad dominicana para hablar de todo';
+const LAB_LOGO = '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5 9a5 5 0 0 1 5-5h12a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5h-7l-6 5v-5a4 4 0 0 1-4-4z" fill="#b5e655"/><path d="M11 11h10M11 15h6" stroke="#121a05" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
 function temas(): array
 {
@@ -45,9 +48,23 @@ function apodo(): string
     return $_SESSION['apodo'] ?? '';
 }
 
-function cabecera(string $tagline): void
+// Avatar de letra con un color propio por apodo.
+function avatar(string $apodo, bool $grande = false): string
+{
+    $h = crc32($apodo) % 360;
+    return '<span class="avatar' . ($grande ? ' grande' : '') . '" style="background: hsl(' . $h . ' 45% 22%); color: hsl(' . $h . ' 80% 78%)">'
+        . e(inicial($apodo)) . '</span>';
+}
+
+function cabecera(string $titulo, string $sub = '', bool $estrecha = false): void
 {
     $a = apodo();
-    $sesion = es_moderador() ? 'moderador' : ($a !== '' ? e($a) : 'invitado');
-    lab_header($tagline, ['/' => 'Temas', '/nuevo.php' => 'Nuevo tema', '/moderacion/' => 'Moderación'], $sesion);
+    if (es_moderador()) {
+        $sesion = '<span class="chip">moderador</span>';
+    } elseif ($a !== '') {
+        $sesion = avatar($a) . e($a);
+    } else {
+        $sesion = '<span class="muted">invitado</span>';
+    }
+    lab_header($titulo, ['/' => 'Temas', '/nuevo.php' => 'Nuevo tema', '/moderacion/' => 'Moderación'], $sesion, ['sub' => $sub, 'estrecha' => $estrecha]);
 }

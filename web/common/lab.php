@@ -2,9 +2,12 @@
 // Utilidades comunes del lab de aplicaciones web completas (local y
 // controlado). Cada nivel define en /var/www/lib/app.php:
 //   LAB_APP   nombre de la aplicación
-//   LAB_HINT  pista del nivel (va en el título de la página)
-//   LAB_EXTRA texto extra para el pie (cuentas, servidor de exploits...)
-// y su propia navegación con lab_header($tagline, $menu, $sesion).
+//   LAB_HINT  pista del nivel (va en el título de la página y en la píldora)
+//   LAB_EXTRA texto extra para la píldora (cuentas, servidor de exploits...)
+//   LAB_TEMA  hoja de estilos propia de la app (/assets/<tema>.css)
+//   LAB_LOGO  SVG del logo
+//   LAB_PIE   texto del pie de página
+// y su propia navegación con lab_header($titulo, $menu, $sesion, $opts).
 
 if (PHP_SAPI !== 'cli' && session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -71,51 +74,79 @@ function bot_visitar(string $url, array $cookies): array
     return [$code === 200, $r === false ? 'el bot no responde' : (string) $r];
 }
 
-// $menu: [href => texto]. $sesion: HTML ya escapado para la esquina de la barra.
-function lab_header(string $tagline, array $menu = [], string $sesion = ''): void
+// Inicial para los avatares de letra.
+function inicial(string $nombre): string
 {
+    return mb_strtoupper(mb_substr($nombre, 0, 1));
+}
+
+// $menu: [href => texto]. $sesion: HTML ya escapado para la esquina derecha.
+// $opts: 'sub' (bajada del título), 'estrecha' (página angosta, para formularios).
+// Si $titulo es '', la página pinta su propio encabezado (por ejemplo, un hero).
+function lab_header(string $titulo, array $menu = [], string $sesion = '', array $opts = []): void
+{
+    $ruta = (string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+    $nav = '';
+    foreach ($menu as $href => $txt) {
+        $activo = $href === '/' ? in_array($ruta, ['/', '/index.php'], true)
+            : ($ruta === $href || (str_ends_with($href, '/') && str_starts_with($ruta, $href)));
+        $nav .= '<a href="' . e($href) . '"' . ($activo ? ' class="activo" aria-current="page"' : '') . '>' . e($txt) . '</a>';
+    }
+    $titulo_html = e($titulo);
     $level = e(getenv('LAB_LEVEL') ?: '');
     $app = e(LAB_APP);
     $hint = e(LAB_HINT);
-    $tagline = e($tagline);
-    $nav = '';
-    foreach ($menu as $href => $txt) {
-        $nav .= '<a href="' . e($href) . '">' . e($txt) . '</a>';
-    }
+    $tema = e(LAB_TEMA);
+    $logo = LAB_LOGO;
+    $clase = empty($opts['estrecha']) ? 'page' : 'page estrecha';
+    $titulo_tab = $titulo !== '' ? "$titulo_html · " : '';
     echo <<<HTML
 <!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{$app} · Nivel {$level} · {$hint}</title>
-<link rel="stylesheet" href="/assets/style.css">
+<title>{$titulo_tab}{$app} · Nivel {$level} · {$hint}</title>
+<link rel="stylesheet" href="/assets/base.css">
+<link rel="stylesheet" href="/assets/{$tema}.css">
 </head>
-<body>
-<header class="lab-bar">
-  <span class="brand">cdelunasec<span class="dim">/labs</span></span>
-  <span class="tag">web</span>
-  <span class="tag level">nivel {$level}</span>
-  <span class="session">{$sesion}</span>
+<body class="tema-{$tema}">
+<header class="top">
+  <div class="top-in">
+    <a class="marca" href="/">{$logo}<span>{$app}</span></a>
+    <nav class="nav">{$nav}</nav>
+    <div class="sesion">{$sesion}</div>
+  </div>
 </header>
-<main class="wrap">
-  <section class="app">
-    <p class="hint">{$hint}</p>
-    <h1><a href="/" class="home">{$app}</a></h1>
-    <p class="tagline">{$tagline}</p>
-    <nav class="menu">{$nav}</nav>
+<main class="{$clase}">
 
 HTML;
+    if ($titulo !== '') {
+        $sub = isset($opts['sub']) && $opts['sub'] !== '' ? '<p>' . e($opts['sub']) . '</p>' : '';
+        echo "  <div class=\"page-head ld\"><h1>{$titulo_html}</h1>{$sub}</div>\n";
+    }
 }
 
 function lab_footer(): void
 {
+    $level = e(getenv('LAB_LEVEL') ?: '');
+    $hint = e(LAB_HINT);
     $goal = e(defined('LAB_OBJETIVO') ? LAB_OBJETIVO : LAB_GOAL);
-    $extra = LAB_EXTRA !== '' ? e(LAB_EXTRA) . ' · ' : '';
+    $extra = LAB_EXTRA !== '' ? '<p><span>extra:</span> ' . e(LAB_EXTRA) . '</p>' : '';
+    $pie = e(LAB_PIE);
     echo <<<HTML
-  </section>
-  <p class="goal">{$extra}Objetivo: {$goal}</p>
 </main>
+<footer class="pie">{$pie}</footer>
+<details class="lab-pill">
+  <summary><span class="led"></span><b>web</b> · nivel {$level}</summary>
+  <div class="info">
+    <p><span>cdelunasec/labs</span></p>
+    <p><span>pista:</span> {$hint}</p>
+    <p><span>objetivo:</span> {$goal}</p>
+    {$extra}
+  </div>
+</details>
+<script src="/assets/base.js"></script>
 </body>
 </html>
 HTML;
@@ -123,5 +154,5 @@ HTML;
 
 function lab_alert(string $type, string $text): void
 {
-    echo '<div class="alert ' . e($type) . '">' . e($text) . "</div>\n";
+    echo '<div class="aviso ' . e($type) . ' ld">' . e($text) . "</div>\n";
 }

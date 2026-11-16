@@ -2,24 +2,34 @@
 require '/var/www/lib/app.php';
 
 exigir_oficina();
-cabecera('Herramientas internas del equipo de soporte.');
+cabecera('Consola de agentes', 'Herramientas internas del equipo de soporte.');
+$lista = tickets();
 ?>
-    <span class="badge">red de la oficina</span>
-    <h2>Tickets</h2>
-    <table class="data">
-      <tr><th>Archivo</th><th></th></tr>
-<?php foreach (tickets() as $t): ?>
-      <tr><td><code><?= e($t) ?></code></td><td><a href="/interno/ver.php?archivo=<?= e(urlencode($t)) ?>">Ver</a></td></tr>
+  <section class="ld">
+    <table class="tabla">
+      <tr><th>Archivo</th><th>Cliente</th><th>Asunto</th><th>Estado</th><th></th></tr>
+<?php foreach ($lista as $t): $d = datos_ticket($t); ?>
+      <tr>
+        <td><code><?= e($t) ?></code></td>
+        <td><?= $d['Cliente'] ?? '' ?></td>
+        <td class="muted"><?= $d['Asunto'] ?? '' ?></td>
+        <td><span class="chip<?= ($d['Estado'] ?? '') === 'abierto' ? '' : ' gris' ?>"><?= e($d['Estado'] ?? '') ?></span></td>
+        <td><a href="/interno/ver.php?archivo=<?= e(urlencode($t)) ?>">Ver</a></td>
+      </tr>
 <?php endforeach; ?>
     </table>
-<?php if (!tickets()): ?>
-    <p class="muted">No hay tickets todavía.</p>
+<?php if (!$lista): ?>
+    <div class="card plano vacio"><strong>No hay tickets todavía.</strong>Cuando un cliente abra uno, aparece aquí.</div>
 <?php endif; ?>
-    <h2>Notas del equipo</h2>
-    <ul>
-      <li>El visor abre los tickets de <code><?= e(SOPORTE) ?>/tickets/</code>.</li>
-      <li>La bitácora de accesos del portal está en <code><?= e(SOPORTE) ?>/logs/acceso.log</code>. Para verla, pídesela a sistemas.</li>
+  </section>
+
+  <section class="seccion card plano ld">
+    <h2 style="font-size: 16px; margin-bottom: 14px">Notas del equipo</h2>
+    <ul class="notas">
+      <li>El visor abre los tickets de <span class="ruta"><?= e(SOPORTE) ?>/tickets/</span></li>
+      <li>La bitácora de accesos del portal está en <span class="ruta"><?= e(SOPORTE) ?>/logs/acceso.log</span>. Para verla, pídesela a sistemas.</li>
       <li>Desde que el balanceador manda la IP real del cliente, esta sección ya no se ve desde fuera.</li>
     </ul>
+  </section>
 <?php
 lab_footer();

@@ -3,7 +3,7 @@ require '/var/www/lib/app.php';
 
 if (!es_moderador()) {
     http_response_code(403);
-    cabecera('Panel de moderación.');
+    cabecera('Moderación', '', true);
     lab_alert('err', 'Solo para moderadores.');
     lab_footer();
     exit;
@@ -48,31 +48,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-cabecera('Panel de moderación.');
+cabecera('Moderación', 'Reportes de la comunidad y herramientas del equipo.');
 if ($msg) {
     lab_alert($msg[0], $msg[1]);
 }
 if ($respuesta !== null) {
-    echo '<pre>' . e($respuesta) . "</pre>\n";
+    echo '<div class="respuesta ld"><pre>' . e($respuesta) . "</pre></div>\n";
 }
+$reportes = array_slice(array_reverse(datos_leer('reportes')), 0, 10);
 ?>
-    <span class="badge">moderador</span>
-    <h2>Reportes recientes</h2>
-    <table class="data">
-      <tr><th>Tema</th><th>Fecha</th><th>Reportado por</th></tr>
-<?php foreach (array_slice(array_reverse(datos_leer('reportes')), 0, 10) as $r): ?>
-      <tr><td><a href="/tema.php?id=<?= (int) $r['tema'] ?>">#<?= (int) $r['tema'] ?></a></td><td><?= e($r['fecha']) ?></td><td><?= e($r['por']) ?></td></tr>
+  <div class="mod-grid">
+    <section class="ld">
+      <h2 style="margin-bottom: 10px">Reportes recientes</h2>
+<?php if ($reportes): ?>
+      <table class="tabla">
+        <tr><th>Tema</th><th>Fecha</th><th>Reportado por</th></tr>
+<?php foreach ($reportes as $r): ?>
+        <tr><td><a href="/tema.php?id=<?= (int) $r['tema'] ?>">#<?= (int) $r['tema'] ?></a></td><td class="muted"><?= e($r['fecha']) ?></td><td><?= e($r['por']) ?></td></tr>
 <?php endforeach; ?>
-    </table>
-    <h2>Importar portada desde una URL</h2>
-    <form class="stack" method="post">
-      <input type="text" name="url" placeholder="https://ejemplo.com/portada.png">
-      <button>Importar</button>
-    </form>
-    <h2>Notas</h2>
-    <ul>
-      <li>Si el foro se pone lento, revisen el panel de diagnóstico del servidor (puerto 8080, solo local).</li>
-      <li>Nada de importar imágenes de direcciones internas: sistemas ya lo bloqueó.</li>
-    </ul>
+      </table>
+<?php else: ?>
+      <div class="card plano vacio"><strong>Sin reportes.</strong>Cuando alguien reporte un tema, aparece aquí.</div>
+<?php endif; ?>
+    </section>
+
+    <div style="display: grid; gap: 18px">
+      <section class="caja ld">
+        <h2 style="margin-bottom: 6px">Importar portada desde una URL</h2>
+        <p class="muted chica">La imagen se descarga al servidor y queda en <code>/uploads/portadas/</code>.</p>
+        <form class="form" method="post">
+          <input type="text" name="url" placeholder="https://ejemplo.com/portada.png">
+          <button>Importar</button>
+        </form>
+      </section>
+      <section class="card plano ld">
+        <h2 style="font-size: 16px; margin-bottom: 12px">Notas</h2>
+        <ul class="notas">
+          <li>Si el foro se pone lento, revisen el panel de diagnóstico del servidor (puerto 8080, solo local).</li>
+          <li>Nada de importar imágenes de direcciones internas: sistemas ya lo bloqueó.</li>
+        </ul>
+      </section>
+    </div>
+  </div>
 <?php
 lab_footer();

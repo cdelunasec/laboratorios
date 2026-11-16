@@ -2,6 +2,8 @@
 require '/var/www/lib/app.php';
 
 $error = null;
+$apodo = apodo();
+$titulo = $texto = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $apodo = trim((string) ($_POST['apodo'] ?? ''));
     $titulo = trim((string) ($_POST['titulo'] ?? ''));
@@ -20,19 +22,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-cabecera('Abre un tema nuevo.');
+cabecera('Nuevo tema', 'Pregunta, recomienda o cuenta. Se permite HTML básico para dar formato.', true);
 if ($error) {
     lab_alert('err', $error);
 }
 ?>
-    <form class="stack" method="post">
-      <label>Apodo</label>
-      <input type="text" name="apodo" value="<?= e(apodo()) ?>">
-      <label>Título</label>
-      <input type="text" name="titulo">
-      <label>Mensaje (se permite HTML básico)</label>
-      <textarea name="texto" rows="6"></textarea>
+  <div class="caja ld">
+    <form class="form" method="post">
+      <div class="campo"><label for="a">Apodo</label><input id="a" type="text" name="apodo" value="<?= e($apodo) ?>"></div>
+      <div class="campo"><label for="t">Título</label><input id="t" type="text" name="titulo" value="<?= e($titulo) ?>"></div>
+      <div class="campo"><label for="m">Mensaje</label><textarea id="m" name="texto" rows="7"><?= e($texto) ?></textarea></div>
       <button>Publicar</button>
     </form>
+  </div>
 <?php
 lab_footer();

@@ -2,6 +2,7 @@
 require '/var/www/lib/app.php';
 
 $error = null;
+$nombre = $email = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nombre = strtolower(trim((string) ($_POST['usuario'] ?? '')));
     $email = trim((string) ($_POST['email'] ?? ''));
@@ -26,19 +27,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-cabecera('Crea tu cuenta y compra más rápido.');
+cabecera('Crea tu cuenta', 'Y compra más rápido la próxima vez.', true);
 if ($error) {
     lab_alert('err', $error);
 }
 ?>
-    <form class="stack" method="post">
-      <label>Usuario</label>
-      <input type="text" name="usuario">
-      <label>Correo</label>
-      <input type="text" name="email">
-      <label>Contraseña</label>
-      <input type="password" name="clave">
+  <div class="caja ld">
+    <form class="form" method="post">
+      <div class="campo"><label for="u">Usuario</label><input id="u" type="text" name="usuario" value="<?= e($nombre) ?>" autocomplete="username"></div>
+      <div class="campo"><label for="m">Correo</label><input id="m" type="text" name="email" value="<?= e($email) ?>" autocomplete="email"></div>
+      <div class="campo"><label for="c">Contraseña</label><input id="c" type="password" name="clave" autocomplete="new-password"></div>
       <button>Crear cuenta</button>
     </form>
+    <p class="extra">¿Ya tienes cuenta? <a href="/login.php">Entra aquí</a>.</p>
+  </div>
 <?php
 lab_footer();

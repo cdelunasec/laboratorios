@@ -1,0 +1,93 @@
+/* Papelería Colón. Layout: un hero de vitrina (titular grande + sello de
+   entrega) y debajo el catálogo como estantería de tarjetas ilustradas. */
+:root {
+  --bg: #110c0b; --surface: #1a1311; --surface-2: #231917; --surface-3: #2e211e;
+  --line: rgba(255, 99, 71, .10); --line-strong: rgba(255, 99, 71, .30);
+  --accent: #ff6347; --accent-hi: #ff9a85; --accent-soft: rgba(255, 99, 71, .14); --on-accent: #1c0905;
+  --text: #f3e9e6; --white: #fff; --muted: #a8928c; --faint: #6f5d58;
+  --ok: #7bdc9a; --warn: #ffc35c; --danger: #ff6b81;
+  --f-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --f-body: "Figtree", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, monospace;
+  --sombra: 0 12px 34px rgba(0, 0, 0, .4);
+}
+
+h1, h2, h3, .marca { font-variation-settings: "opsz" 96; letter-spacing: -.02em; }
+
+/* Hero */
+.hero {
+  position: relative; overflow: hidden;
+  display: grid; grid-template-columns: 1.25fr .75fr; gap: 28px; align-items: center;
+  padding: 48px 44px; border-radius: var(--r-lg);
+  background:
+    radial-gradient(600px 300px at 85% 10%, rgba(255, 99, 71, .22), transparent 70%),
+    linear-gradient(160deg, var(--surface-2), var(--surface));
+  box-shadow: var(--sombra);
+}
+.hero h1 { font-size: clamp(36px, 6vw, 62px); font-weight: 800; line-height: 1.02; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero p { color: var(--muted); font-size: 18px; max-width: 46ch; margin: 18px 0 26px; }
+.hero .acciones { display: flex; gap: 12px; flex-wrap: wrap; }
+.sello {
+  justify-self: center;
+  width: 210px; aspect-ratio: 1; border-radius: 50%;
+  display: grid; place-items: center; text-align: center;
+  background: var(--accent); color: var(--on-accent);
+  transform: rotate(-8deg);
+  box-shadow: 0 18px 40px rgba(255, 99, 71, .28);
+  animation: flotar 6s ease-in-out infinite;
+}
+.sello b { display: block; font: 800 64px/0.9 var(--f-display); letter-spacing: -.04em; }
+.sello span { font-weight: 700; font-size: 15px; line-height: 1.25; }
+@keyframes flotar { 50% { transform: rotate(-4deg) translateY(-6px); } }
+
+/* Catálogo */
+.estante { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
+.producto { background: var(--surface); border-radius: var(--r); padding: 16px; box-shadow: var(--sombra); transition: transform .2s; }
+.producto:hover { transform: translateY(-3px); }
+.producto .ilus {
+  height: 136px; border-radius: 12px; margin-bottom: 14px;
+  display: grid; place-items: center;
+  background: var(--tinte, var(--accent-soft)); color: var(--tinta, var(--accent-hi));
+}
+.producto .ilus svg { width: 66px; height: 66px; transition: transform .25s; }
+.producto:hover .ilus svg { transform: rotate(-6deg) scale(1.06); }
+.producto h3 { font-size: 16px; font-weight: 700; }
+.producto .fila { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+.precio { font: 600 16px var(--f-mono); color: var(--white); }
+.precio small { color: var(--muted); font-size: 12px; margin-right: 3px; }
+
+.ventajas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.ventaja { display: flex; gap: 14px; align-items: flex-start; }
+.ventaja svg { width: 28px; height: 28px; flex: none; color: var(--accent); }
+.ventaja b { display: block; color: var(--white); }
+.ventaja span { color: var(--muted); font-size: 14px; }
+
+/* Formularios en tarjeta */
+.caja { background: var(--surface); border-radius: var(--r-lg); padding: 30px; box-shadow: var(--sombra); }
+.caja .extra { margin-top: 18px; font-size: 14px; color: var(--muted); }
+
+/* Cuenta */
+.perfil { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; }
+.perfil .avatar { width: 72px; height: 72px; font-size: 28px; }
+.perfil dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; }
+.perfil dt { color: var(--muted); font-size: 14px; }
+.perfil dd { margin: 0; color: var(--white); }
+.esqueleto { height: 14px; border-radius: 6px; background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%); background-size: 200% 100%; animation: brillo 1.6s linear infinite; }
+@keyframes brillo { to { background-position: -200% 0; } }
+
+/* Administración */
+.cifras { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.cifra { background: var(--surface); border-radius: var(--r); padding: 20px 22px; box-shadow: var(--sombra); }
+.cifra b { display: block; font: 700 34px/1 var(--f-display); color: var(--white); }
+.cifra span { color: var(--muted); font-size: 14px; }
+.dos { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; align-items: start; }
+.subidas { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 6px; }
+.subidas a { font-family: var(--f-mono); font-size: 14px; }
+
+@media (max-width: 820px) {
+  .hero { grid-template-columns: 1fr; padding: 32px 24px; }
+  .sello { width: 150px; justify-self: start; }
+  .sello b { font-size: 46px; }
+  .ventajas, .cifras, .dos { grid-template-columns: 1fr; }
+}

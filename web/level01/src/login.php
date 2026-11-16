@@ -2,8 +2,10 @@
 require '/var/www/lib/app.php';
 
 $error = null;
+$nombre = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $u = buscar_usuario(strtolower(trim((string) ($_POST['usuario'] ?? ''))));
+    $nombre = strtolower(trim((string) ($_POST['usuario'] ?? '')));
+    $u = buscar_usuario($nombre);
     if ($u && password_verify((string) ($_POST['clave'] ?? ''), $u['clave'])) {
         session_regenerate_id(true);
         $_SESSION['uid'] = $u['id'];
@@ -12,18 +14,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $error = 'Usuario o contraseña incorrectos.';
 }
 
-cabecera('Entra a tu cuenta.');
+cabecera('Bienvenido de vuelta', 'Entra para ver tu cuenta y tus pedidos.', true);
 if ($error) {
     lab_alert('err', $error);
 }
 ?>
-    <form class="stack" method="post">
-      <label>Usuario</label>
-      <input type="text" name="usuario">
-      <label>Contraseña</label>
-      <input type="password" name="clave">
+  <div class="caja ld">
+    <form class="form" method="post">
+      <div class="campo"><label for="u">Usuario</label><input id="u" type="text" name="usuario" value="<?= e($nombre) ?>" autocomplete="username"></div>
+      <div class="campo"><label for="c">Contraseña</label><input id="c" type="password" name="clave" autocomplete="current-password"></div>
       <button>Entrar</button>
     </form>
-    <p class="muted"><a href="/olvide.php">¿Olvidaste tu contraseña?</a> · <a href="/registro.php">Crear cuenta</a></p>
+    <p class="extra"><a href="/olvide.php">¿Olvidaste tu contraseña?</a> · <a href="/registro.php">Crear cuenta</a></p>
+  </div>
 <?php
 lab_footer();

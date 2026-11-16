@@ -16,15 +16,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $enviado = true;
 }
 
-cabecera('Recupera el acceso a tu cuenta.');
+cabecera('Recupera tu cuenta', 'Te mandamos un enlace al correo para elegir otra contraseña.', true);
 if ($enviado) {
     lab_alert('ok', 'Si la cuenta existe, te mandamos a su correo un enlace para cambiar la contraseña. Vence en 15 minutos.');
 }
 ?>
-    <form class="stack" method="post">
-      <label>Usuario</label>
-      <input type="text" name="usuario">
+  <div class="caja ld">
+    <form class="form" method="post">
+      <div class="campo"><label for="u">Usuario</label><input id="u" type="text" name="usuario" autocomplete="username"></div>
       <button>Enviar enlace</button>
     </form>
+    <p class="extra"><a href="/login.php">← Volver a entrar</a></p>
+  </div>
 <?php
 lab_footer();
