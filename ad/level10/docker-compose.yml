@@ -1,0 +1,22 @@
+services:
+  dc:
+    build:
+      context: ..
+      dockerfile: common/dc/Dockerfile
+      args:
+        LEVEL: "10"
+    image: cdelunasec-labs/ad-dc:10
+    container_name: ad-10-dc
+    hostname: dc01
+    domainname: quisqueya.lab
+    dns: [127.0.0.1]
+    networks:
+      lab:
+        ipv4_address: 10.13.37.10
+    volumes:
+      - ../../.flags/ad:/lab-hashes
+networks:
+  lab:
+    ipam:
+      config:
+        - subnet: 10.13.37.0/24

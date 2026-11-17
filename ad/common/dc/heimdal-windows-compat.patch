@@ -1,0 +1,82 @@
+Lab: hace que el KDC Heimdal de Samba se comporte como el de Windows en los
+detalles de los que dependen las herramientas de Kerberos de Kali (impacket:
+getTGT, getST, GetNPUsers/AS-REP roasting, GetUserSPNs/Kerberoasting, y
+getST -impersonate para delegacion).
+
+1. TGS-REQ: Windows acepta un authenticator sin checksum; Heimdal respondia
+   KRB_AP_ERR_INAPP_CKSUM.
+2. AS-REP: Windows siempre manda starttime; Heimdal solo en tickets posdatados,
+   e impacket se cae al guardar el ccache si no viene.
+3. AS-REP roasting: require_preauth_p() miraba config->require_preauth (que
+   Samba pone a 1 global) y el flag del krbtgt, tapando el DONT_REQ_PREAUTH por
+   cuenta. Windows deja que el flag por cuenta mande; miramos solo el del cliente.
+4. GetUserSPNs pide el ticket de servicio con un nombre NT-MS-PRINCIPAL
+   "dominio\sAMAccountName"; Samba no quitaba el prefijo "dominio\" al buscar.
+
+--- a/third_party/heimdal/kdc/krb5tgs.c
++++ b/third_party/heimdal/kdc/krb5tgs.c
+@@ -830,8 +830,8 @@
+         goto out;
+     }
+     if(auth->cksum == NULL){
+-	kdc_log(context, config, 4, "No authenticator in request");
+-	ret = KRB5KRB_AP_ERR_INAPP_CKSUM;
++	kdc_log(context, config, 4, "No authenticator checksum in request (accepted, like Windows)");
++	ret = 0;
+ 	goto out;
+     }
+ 
+--- a/third_party/heimdal/kdc/kerberos5.c
++++ b/third_party/heimdal/kdc/kerberos5.c
+@@ -2343,9 +2343,11 @@
+ static int
+ require_preauth_p(astgs_request_t r)
+ {
+-    return r->config->require_preauth
+-	|| r->client->flags.require_preauth
+-	|| r->server->flags.require_preauth;
++    /* Lab: Windows deja que el DONT_REQ_PREAUTH por cuenta mande. Samba
++     * pone config->require_preauth=1 global y el "server" del AS-REQ es
++     * el krbtgt (require_preauth=1), que tapaban ese flag. Miramos solo
++     * el del cliente para que el AS-REP roasting funcione. */
++    return r->client->flags.require_preauth;
+ }
+ 
+ 
+@@ -2939,6 +2941,13 @@
+ 	    start = *r->et.starttime = *req->req_body.from;
+ 	    r->et.flags.invalid = 1;
+ 	    r->et.flags.postdated = 1; /* XXX ??? */
++	} else {
++	    /* Lab: Windows siempre manda starttime en el AS-REP; Heimdal
++	     * solo en tickets posdatados, e impacket se cae al guardar el
++	     * ccache si falta. */
++	    ALLOC(r->et.starttime);
++	    if (r->et.starttime)
++		*r->et.starttime = start;
+ 	}
+ 	_kdc_fix_time(&b->till);
+ 	t = *b->till;
+--- a/source4/kdc/db-glue.c
++++ b/source4/kdc/db-glue.c
+@@ -3264,6 +3264,20 @@
+ 			return ret;
+ 		}
+ 
++		/* Lab: GetUserSPNs/NT-MS-PRINCIPAL pide el servicio como
++		 * "dominio\\sAMAccountName". Windows lo resuelve; quitamos el
++		 * prefijo "dominio\\" para buscar por el sAMAccountName. */
++		{
++			char *bs = strrchr(short_princ, '\\');
++			if (bs != NULL) {
++				char *tail = strdup(bs + 1);
++				if (tail != NULL) {
++					SAFE_FREE(short_princ);
++					short_princ = tail;
++				}
++			}
++		}
++
+ 		name1 = ldb_binary_encode_string(mem_ctx, short_princ);
+ 		SAFE_FREE(short_princ);
+ 		if (name1 == NULL) {

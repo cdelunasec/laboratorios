@@ -1,0 +1,45 @@
+services:
+  dc:
+    build:
+      context: ..
+      dockerfile: common/dc/Dockerfile
+      args:
+        LEVEL: "19"
+    image: cdelunasec-labs/ad-dc:19
+    container_name: ad-19-dc
+    hostname: dc01
+    domainname: quisqueya.lab
+    dns: [127.0.0.1]
+    environment:
+      LAB_FLAG_ON: dc
+    networks:
+      lab:
+        ipv4_address: 10.13.37.10
+    volumes:
+      - ../../.flags/ad:/lab-hashes
+      - labjoin:/lab-join
+  srv:
+    build:
+      context: ..
+      dockerfile: common/srv/Dockerfile
+      args:
+        LEVEL: "19"
+    image: cdelunasec-labs/ad-srv:19
+    container_name: ad-19-srv
+    hostname: srv01
+    domainname: quisqueya.lab
+    dns: [10.13.37.10]
+    depends_on:
+      - dc
+    networks:
+      lab:
+        ipv4_address: 10.13.37.20
+    volumes:
+      - labjoin:/lab-join
+networks:
+  lab:
+    ipam:
+      config:
+        - subnet: 10.13.37.0/24
+volumes:
+  labjoin:

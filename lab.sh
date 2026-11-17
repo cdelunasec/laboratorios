@@ -19,6 +19,7 @@ declare -A CATEGORIES=(
     [xss]="xss"
     [csrf]="csrf"
     [web]="web"
+    [ad]="ad"
 )
 declare -A PORT_PREFIX=(
     [file-upload]="80"
@@ -29,6 +30,12 @@ declare -A PORT_PREFIX=(
     [xss]="85"
     [csrf]="86"
     [web]="87"
+    [ad]="ad"
+)
+# Categorías sin puerto publicado: viven en su propia red de Docker con IP fija.
+# Solo puede correr un nivel a la vez porque todos usan la misma subred.
+declare -A FIXED_NET=(
+    [ad]="10.13.37.10 (dc01.quisqueya.lab)"
 )
 BOT_NET="labs-bot"
 
@@ -57,7 +64,7 @@ Comandos:
   bot [up|down]     Levanta o apaga el bot víctima y el servidor de exploits
                     (http://127.0.0.1:8290). Los niveles que lo usan lo levantan solos.
 
-Categorías: upload (file-upload), lfi, http (http-headers), idor, ssrf, xss, csrf, web
+Categorías: upload (file-upload), lfi, http (http-headers), idor, ssrf, xss, csrf, web, ad
 
 Ejemplo:
   ./lab.sh up upload 1      ->  http://127.0.0.1:8001
@@ -74,7 +81,11 @@ resolve() {
     LEVEL_DIR="$ROOT/$DIR_CAT/level$LVL"
     [[ -d "$LEVEL_DIR" ]] || { echo "[!] No existe el nivel $LVL de $DIR_CAT" >&2; exit 1; }
     PROJECT="$DIR_CAT-$LVL"
-    URL="http://127.0.0.1:${PORT_PREFIX[$DIR_CAT]}$LVL"
+    if [[ -n "${FIXED_NET[$DIR_CAT]:-}" ]]; then
+        URL="${FIXED_NET[$DIR_CAT]}"
+    else
+        URL="http://127.0.0.1:${PORT_PREFIX[$DIR_CAT]}$LVL"
+    fi
 }
 
 dc() {
@@ -104,15 +115,29 @@ ensure_bot() {
 # Los niveles que validan con el panel escriben el hash de su flag al arrancar.
 # Espera a que aparezca el hash nuevo para no anunciar el nivel antes de tiempo.
 wait_hash() {
-    local since="$1" f="$ROOT/.flags/$DIR_CAT/$LVL"
+    local since="$1" f="$ROOT/.flags/$DIR_CAT/$LVL" tries=60
     grep -q lab-hashes "$LEVEL_DIR/docker-compose.yml" || return 0
-    for _ in $(seq 1 60); do
+    # Un dominio de AD se provisiona en el primer arranque: tarda más.
+    [[ -n "${FIXED_NET[$DIR_CAT]:-}" ]] && tries=360
+    for _ in $(seq 1 "$tries"); do
         if [[ -f "$f" ]] && (( $(stat -c %Y "$f" 2>/dev/null || echo 0) >= since )); then
             return 0
         fi
         sleep 0.5
     done
-    echo "[!] El nivel no publicó su hash en 30 s. Revisa: ./lab.sh logs $DIR_CAT $((10#$LVL))" >&2
+    echo "[!] El nivel no publicó su hash en $((tries / 2)) s. Revisa: ./lab.sh logs $DIR_CAT $((10#$LVL))" >&2
+}
+
+# En las categorías con red fija, apaga cualquier otro nivel de la misma
+# categoría: chocarían en la subred.
+free_fixed_net() {
+    [[ -n "${FIXED_NET[$DIR_CAT]:-}" ]] || return 0
+    local p
+    for p in $(docker ps -a --format '{{.Label "com.docker.compose.project"}}' | grep -E "^$DIR_CAT-[0-9]+$" | sort -u); do
+        [[ "$p" == "$PROJECT" ]] && continue
+        echo "[*] Apagando $p (solo puede correr un nivel de $DIR_CAT a la vez)..."
+        "${COMPOSE[@]}" -p "$p" -f "$ROOT/$DIR_CAT/level${p##*-}/docker-compose.yml" down >/dev/null 2>&1 || true
+    done
 }
 
 # Contenedores o redes de todos los niveles (nunca el panel ni el bot).
@@ -135,6 +160,7 @@ case "$cmd" in
         resolve "$@"
         mkdir -p "$ROOT/.flags/$DIR_CAT"
         ensure_bot
+        free_fixed_net
         since=$(date +%s)
         dc up -d --build
         wait_hash "$since"
@@ -149,6 +175,7 @@ case "$cmd" in
         resolve "$@"
         mkdir -p "$ROOT/.flags/$DIR_CAT"
         ensure_bot
+        free_fixed_net
         dc down -v
         since=$(date +%s)
         dc up -d --build --force-recreate
@@ -165,7 +192,11 @@ case "$cmd" in
             name="$(basename "$dir")"
             [[ -n "${PORT_PREFIX[$name]:-}" ]] || continue
             count=$(find "$dir" -maxdepth 1 -type d -name 'level*' | wc -l)
-            echo "$name: $count niveles (puertos ${PORT_PREFIX[$name]}01-${PORT_PREFIX[$name]}$(printf "%02d" "$count"))"
+            if [[ -n "${FIXED_NET[$name]:-}" ]]; then
+                echo "$name: $count niveles (uno a la vez, en ${FIXED_NET[$name]})"
+            else
+                echo "$name: $count niveles (puertos ${PORT_PREFIX[$name]}01-${PORT_PREFIX[$name]}$(printf "%02d" "$count"))"
+            fi
         done
         ;;
     status)

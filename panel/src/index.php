@@ -159,7 +159,7 @@ if ($cambio) {
         <span class="st"><?= $estado ?></span>
         <b>Nivel <?= $k ?></b>
         <div><?= e($pista) ?></div>
-        <div class="meta"><?= e($tipo) ?> · :<?= e($c['puerto'] . $k) ?></div>
+        <div class="meta"><?= e($tipo) ?> · <?= e(isset($c['destino']) ? $c['destino'] : ':' . $c['puerto'] . $k) ?></div>
       </div>
 <?php endforeach; ?>
     </div>

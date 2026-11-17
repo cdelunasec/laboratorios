@@ -42,7 +42,7 @@ Eso levanta el nivel 1 de file-upload en `http://127.0.0.1:8001`. El puerto es `
 | `./lab.sh bot` | Levanta el bot víctima y el servidor de exploits en `http://127.0.0.1:8290` (los niveles que lo usan lo levantan solos) |
 | `./lab.sh panel` | Levanta el panel de flags en `http://127.0.0.1:8200` (`./lab.sh panel down` lo apaga) |
 
-Categorías disponibles: `upload` (alias de `file-upload`), `lfi`, `http` (alias de `http-headers`), `idor`, `ssrf`, `xss`, `csrf` y `web`.
+Categorías disponibles: `upload` (alias de `file-upload`), `lfi`, `http` (alias de `http-headers`), `idor`, `ssrf`, `xss`, `csrf`, `web` y `ad`.
 
 ## El objetivo
 
@@ -65,6 +65,7 @@ Cada nivel corre en su propio contenedor aislado: lo que hagas en uno no afecta 
 - [x] **csrf** — 12 niveles. Cross-Site Request Forgery contra un admin de verdad (el mismo bot): sin protección, tokens mal validados, Referer, SameSite, JSON y CORS.
 - [x] **idor** — 12 niveles. Insecure Direct Object Reference: leer (y modificar) datos de otros usuarios, de cambiar un número a encadenar filtraciones en una API.
 - [x] **web** — 3 aplicaciones completas (de momento). Cada una tiene varias fallas que hay que encadenar, como en una máquina, hasta ejecutar comandos.
+- [x] **ad** — 20 niveles. Active Directory de verdad (Samba 4 en Docker): enumeración, credenciales, abuso de ACLs y Kerberos.
 
 ## file-upload
 
@@ -313,12 +314,78 @@ Cada web parece una app normal (una tienda, una mesa de ayuda, un foro) y escond
 
 > Estado: las 3 webs se probaron en Docker con un solver automático que recorre la cadena prevista y valida el flag contra el hash del nivel (3/3).
 
+## ad
+
+20 niveles de Active Directory con un dominio de verdad: **Samba 4 como Domain Controller en Docker**. Habla LDAP, Kerberos y SMB reales (no es una simulación), solo que no trae ADCS ni aplica GPOs; por eso los niveles van de enumeración, credenciales, abuso de ACLs (BloodHound) y Kerberos.
+
+El dominio es `quisqueya.lab`, con el DC `dc01.quisqueya.lab` en `10.13.37.10`. Los niveles 16–20 levantan además un servidor Linux unido al dominio, `srv01.quisqueya.lab` en `10.13.37.20`, para los niveles de foothold y delegación. Solo puede correr **un** nivel de ad a la vez (comparten la subred `10.13.37.0/24`): `./lab.sh up ad N` apaga el anterior.
+
+```bash
+./lab.sh up ad 1
+```
+
+Antes de nada, apunta el dominio en tu `/etc/hosts` (las herramientas de Kerberos necesitan los nombres, no las IPs):
+
+```
+10.13.37.10 dc01.quisqueya.lab quisqueya.lab
+10.13.37.20 srv01.quisqueya.lab srv01
+```
+
+La línea de `srv01` solo hace falta en los niveles 16–20.
+
+Para `kinit` y el SSH con Kerberos (niveles 16–20), tu `/etc/krb5.conf` tiene que conocer el realm. El bloque del realm va en varias líneas:
+
+```
+[libdefaults]
+ default_realm = QUISQUEYA.LAB
+ dns_lookup_kdc = false
+ rdns = false
+
+[realms]
+ QUISQUEYA.LAB = {
+  kdc = dc01.quisqueya.lab
+ }
+```
+
+La red del lab (`10.13.37.0/24`) no publica puertos: corre el lab en la misma máquina desde la que atacas (Kali con Docker).
+
+El flag de cada nivel está en el share `Flag` (`\\dc01\Flag`), que solo abre la cuenta o el grupo objetivo. En el nivel 16 el flag vive en `srv01` (el foothold te lleva hasta él). Desde el nivel 4 arrancas con una cuenta de partida: `pasante` / `Bienvenido2026` (`QUISQUEYA\pasante`).
+
+El primer `up` tarda más de lo normal: provisiona el dominio y recompila el KDC de Samba (un parche para que las herramientas de Kerberos de Kali —impacket— funcionen igual que contra un AD de Windows). Después arranca en pocos segundos.
+
+| Nivel | Pista | Técnica |
+|---|---|---|
+| 1 | las cuentas se leen sin entrar | sesión nula y LDAP anónimo |
+| 2 | el share deja pasar a cualquiera | share de invitado |
+| 3 | una contraseña para todos | password spraying |
+| 4 | una cuenta no pide preautenticación | AS-REP roasting |
+| 5 | el ticket del servicio se deja crackear | Kerberoasting |
+| 6 | la política vieja guarda la clave | GPP cpassword en SYSVOL |
+| 7 | el script de login trae regalo | contraseña en NETLOGON |
+| 8 | una máquina con la contraseña del nombre | cuenta de equipo pre-2000 |
+| 9 | puedes cambiarle la clave a alguien | ForceChangePassword |
+| 10 | mandas sobre el grupo entero | GenericAll sobre un grupo |
+| 11 | escríbele un SPN a la cuenta de servicio | GenericWrite + Kerberoasting dirigido |
+| 12 | hazte dueño del objeto | WriteOwner |
+| 13 | reescribe los permisos del grupo | WriteDACL sobre un grupo |
+| 14 | la cuenta administrada guarda su clave | gMSA |
+| 15 | un salto lleva al otro | cadena de ACLs |
+| 16 | un keytab olvidado abre la puerta | foothold SSH (keytab expuesto) |
+| 17 | el portal pide tickets por ti | delegación restringida (S4U) |
+| 18 | el monitor pide tickets por ti | Kerberoasting + delegación restringida |
+| 19 | del foothold a la delegación y al grupo | cadena completa |
+| 20 | el auditor manda sobre el consejo | jefe final (Kerberoasting + GenericAll) |
+
+> Las contraseñas que se crackean están en `rockyou` (como `estrella`, `corazon` o `mariposa`). El nivel de derechos de réplica (DCSync) y el RBCD quedaron fuera: el DRSUAPI de impacket no termina de hablar con Samba y el `S4U2Proxy` basado en recursos no funciona contra este dominio (nivel funcional 2008 R2). El resto de Kerberos (TGS, S4U, Kerberoasting y AS-REP roasting) sí funciona.
+
+> Estado: los 20 niveles se probaron en Docker con un solver automático que los resuelve con la técnica prevista y valida el flag contra el hash del nivel (20/20). Los niveles 18 y 20 se van a rehacer para que el foothold en `srv01` sea obligatorio.
+
 ## Panel de flags
 
 ```bash
 ./lab.sh panel
 ```
 
-Abre `http://127.0.0.1:8200`, pega un flag y el panel te dice si es el del nivel. Valida **lfi**, **http-headers**, **idor**, **ssrf**, **xss**, **csrf** y **web**. Nunca conoce los flags: cada nivel, al arrancar, deja el SHA-256 de su flag en `.flags/<categoría>/<NN>` y el panel compara contra eso. Si reinicias un nivel el flag cambia, así que un flag viejo deja de valer.
+Abre `http://127.0.0.1:8200`, pega un flag y el panel te dice si es el del nivel. Valida **lfi**, **http-headers**, **idor**, **ssrf**, **xss**, **csrf**, **web** y **ad**. Nunca conoce los flags: cada nivel, al arrancar, deja el SHA-256 de su flag en `.flags/<categoría>/<NN>` y el panel compara contra eso. Si reinicias un nivel el flag cambia, así que un flag viejo deja de valer.
 
 El progreso (qué resolviste y cuándo) se guarda en `.flags/panel/progreso.json`. Cada categoría tiene un botón para reiniciar su progreso.
